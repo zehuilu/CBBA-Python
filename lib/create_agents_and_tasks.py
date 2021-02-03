@@ -4,16 +4,15 @@ import sys
 sys.path.append(os.getcwd()+'/lib')
 import time
 import json
-import math
 import random
 import numpy as np
 from dataclasses import dataclass
+from CBBA import CBBA
 from Agent import Agent
 from Task import Task
-from WorldInfo import WorldInfo
 
 
-def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: WorldInfo, config_file_name: str):
+def create_agents_and_tasks(num_agents: int, num_tasks: int, world_info, config_file_name: str):
     """
     Generate agents and tasks based on a json configuration file.
     """
@@ -81,54 +80,16 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     for idx_agent in range(0, num_agents):
         AgentList.append(task_track_default)
         AgentList[idx_agent].agent_id = idx_agent
-        AgentList[idx_agent].x = random.randint(WorldInfoInput.x_min, WorldInfoInput.x_max)
-        AgentList[idx_agent].y = random.randint(WorldInfoInput.y_min, WorldInfoInput.y_max)
+        AgentList[idx_agent].x = random.randint(world_info.x_min, world_info.x_max)
+        AgentList[idx_agent].y = random.randint(world_info.y_min, world_info.y_max)
         AgentList[idx_agent].z = 0
 
     # create random tasks (track only)
     for idx_task in range(0, num_tasks):
         TaskList.append(agent_quad_default)
         TaskList[idx_task].task_id = idx_task
-        TaskList[idx_task].x = random.randint(WorldInfoInput.x_min, WorldInfoInput.x_max)
-        TaskList[idx_task].y = random.randint(WorldInfoInput.y_min, WorldInfoInput.y_max)
+        TaskList[idx_task].x = random.randint(world_info.x_min, world_info.x_max)
+        TaskList[idx_task].y = random.randint(world_info.y_min, world_info.y_max)
         TaskList[idx_task].z = 0
 
     return AgentList, TaskList
-
-
-def remove_from_list(self, list_input: list, index: int):
-    """
-    Remove item from list at location specified by index, then append -1 at the end
-
-    Example:
-        list_input = [0, 1, 2, 3, 4]
-        index = 2
-        list_output = remove_from_list(list_input, index)
-        list_output = [0, 1, 3, 4, -1]
-    """
-
-    list_output = ((-1) * np.ones((1, len(list_input)))).flatten()
-    list_output[0 : index] = np.array(list_input[0 : index])
-    list_output[index : -1] = np.array(list_input[index+1:])
-
-    return list_output.tolist()
-
-
-def insert_in_list(self, list_input: list, value: float, index: int):
-    """
-    Insert value into list at location specified by index, and delete the last one of original list
-
-    Example:
-        list_input = [0, 1, 2, 3, 4]
-        value = 100
-        index = 2
-        list_output = insert_in_list(list_input, value, index)
-        list_output = [0, 1, 100, 2, 3]
-    """
-
-    list_output = ((-1) * np.ones((1, len(list_input)))).flatten()
-    list_output[0 : index] = np.array(list_input[0 : index])
-    list_output[index] = value
-    list_output[index+1:] = np.array(list_input[index:-1])
-
-    return list_output.tolist()

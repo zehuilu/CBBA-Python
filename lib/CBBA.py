@@ -33,15 +33,15 @@ class CBBA(object):
     TaskList: list # 1D list, each entry is a dataclass Task
     
 
-    def __init__(self, num_agents: int, num_tasks: int):
+    def __init__(self, AgentList: list, TaskList: list):
         """
         Constructor
         Initialize CBBA Parameters
         """
 
-        self.num_agents = num_agents
-        self.num_tasks = num_tasks
-        self.max_depth = num_tasks
+        self.num_agents = len(AgentList)
+        self.num_tasks = len(TaskList)
+        self.max_depth = len(TaskList)
 
         # List agent types 
         self.agent_types = ["quad", "car"]
@@ -57,23 +57,23 @@ class CBBA(object):
         self.compatibility_mat[1, 1] = 1 # car for rescue
 
 
-    def solve(self, AgentList: list, TaskList: list):
-        self.num_agents = len(AgentList)
-        self.num_tasks = len(TaskList)
-        self.max_depth = len(TaskList)
+    # def solve(self):
 
 
-    def bundle(self):
+
+
+
+    def bundle(self, idx_agent: int):
         """
         Main CBBA bundle building/updating (runs on each individual agent)
         """
 
-        for idx_agent in range (0, self.num_agents):
-            # Update bundles after messaging to drop tasks that are outbid
-            self.bundle_remove(idx_agent)
+        # Update bundles after messaging to drop tasks that are outbid
+        self.bundle_remove(idx_agent)
+        # Bid on new tasks and add them to the bundle
+        new_bid_flag = self.bundle_add(idx_agent)
 
-            # Bid on new tasks and add them to the bundle
-            # self.bundle_add()
+        return new_bid_flag
 
 
     def bundle_remove(self, idx_agent: int):
@@ -156,12 +156,12 @@ class CBBA(object):
 
             # Select the assignment that will improve the score the most and place bid
             array_max = np.array(self.bid_list[idx_agent]) * D
-            best_task = max_array.argmax()
+            best_task = array_max.argmax()
             value_max = max(array_max)
 
             if (value_max > 0):
                 # Set new bid flag
-                new_bid = True
+                new_bid_flag = True
 
                 # Check for tie
                 all_values = np.where(array_max == value_max)[0]
@@ -178,23 +178,40 @@ class CBBA(object):
                 self.winners_list[idx_agnet][best_task] = self.AgentList[idx_agent].agent_id
                 self.winner_bid_list[idx_agnet][best_task] = self.bid_list[idx_agent][best_task]
 
-                self.path_list[idx_agent] = hp.insert_in_list(self.path_list[idx_agent], best_task, best_indices[best_task])
-                self.times_list[idx_agent] = hp.insert_in_list(self.times_list[idx_agent], task_times[best_task], best_indices[best_task])
-                self.times_list[idx_agent] = hp.insert_in_list(self.scores_list[idx_agent], self.bid_list[idx_agent][best_task], best_indices[best_task])
+                # note this
+                # self.path_list[idx_agent] = hp.insert_in_list(self.path_list[idx_agent], best_task, best_indices[best_task])
+                # self.times_list[idx_agent] = hp.insert_in_list(self.times_list[idx_agent], task_times[best_task], best_indices[best_task])
+                # self.scores_list[idx_agent] = hp.insert_in_list(self.scores_list[idx_agent], self.bid_list[idx_agent][best_task], best_indices[best_task])
 
+                # alternative way
+                self.path_list[idx_agent].insert(best_indices[best_task], best_task)
+                del self.path_list[idx_agent][-1]
+                self.times_list[idx_agent].insert(best_indices[best_task], task_times[best_task])
+                del self.times_list[idx_agent][-1]
+                self.scores_list[idx_agent].insert(best_indices[best_task], self.bid_list[idx_agent][best_task])
+                del self.scores_list[idx_agent][-1]
 
-
-
-                # len = length(find(CBBA_Data.bundle > -1))
-                # CBBA_Data.bundle(len+1) = bestTask
-                
+                length = len( np.where( np.array(self.bundle_list[idx_agent]) > -1 )[0] )
+                self.bundle_list[idx_agent][length] = best_task
 
                 # Update feasibility
                 # This inserts the same feasibility boolean into the feasibilty matrix
+                for i in range (0, self.num_tasks):
+                    # feasibility[i] = hp.insert_in_list(feasibility[i], feasibility[i][best_indices[best_task]], best_indices[best_task])
+                    # alternative way
+                    feasibility[i].insert(best_indices[best_task], feasibility[i][best_indices[best_task]])
+                    del feasibility[i][-1]
+            else:
+                break
 
+            # Check if bundle is full
+            try:
+                self.bundle_list[idx_agent].index(-1)
+                bundle_full_flag = False
+            except:
+                bundle_full_flag = True
 
-
-
+        return new_bid_flag
 
 
     def compute_bid(self, idx_agent: int, feasibility: list):

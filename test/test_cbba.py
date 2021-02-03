@@ -4,34 +4,35 @@ import sys
 sys.path.append(os.getcwd()+'/lib')
 import time
 import json
+import random
+import math
 import numpy as np
 from dataclasses import dataclass
 from CBBA import CBBA
 from Agent import Agent
 from Task import Task
-
-
-def func_test(a: dataclass):
-    print(a.agent_id)
+from WorldInfo import WorldInfo
+import HelperLibrary as hp
 
 
 if __name__ == "__main__":
-    CBBA_1 = CBBA(num_agents=3, num_tasks=5)
-    print(CBBA_1.compatibility_mat)
+    # a json configuration file
+    config_file_name = "config.json"
 
-    AAA = Agent()
-    TTT = Task()
+    # create a world
+    WorldInfoTest = WorldInfo()
+    WorldInfoTest.x_min = 0
+    WorldInfoTest.x_max = 100
+    WorldInfoTest.y_min = 0
+    WorldInfoTest.y_max = 100
+    WorldInfoTest.distance_max = math.sqrt((WorldInfoTest.x_max-WorldInfoTest.x_min)**2 + \
+        (WorldInfoTest.y_max-WorldInfoTest.y_min)**2 + (WorldInfoTest.z_max-WorldInfoTest.z_min)**2)
 
-    print(AAA.agent_id)
-    AAA.agent_id = 5
-    print(AAA.agent_id)
+    num_agents = 4
+    num_tasks = 12
 
-    func_test(AAA)
+    AgentList, TaskList = hp.create_agents_and_tasks(num_agents, num_tasks, WorldInfoTest, config_file_name)
 
-    a=Agent()
-    b=Agent()
-    c=Agent()
-    d=Agent()
 
-    AgentList = [a,b,c,d]
-    func_test(AgentList[3])
+
+    # CBBA_solver = CBBA()
