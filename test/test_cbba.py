@@ -7,7 +7,7 @@ import json
 import random
 import math
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from CBBA import CBBA
 from Agent import Agent
 from Task import Task
@@ -18,21 +18,18 @@ import HelperLibrary as hp
 if __name__ == "__main__":
     # a json configuration file
     config_file_name = "config.json"
+    # Read the configuration from the json file
+    json_file = open(config_file_name)
+    config_data = json.load(json_file)
 
     # create a world
-    WorldInfoTest = WorldInfo()
-    WorldInfoTest.x_min = 0
-    WorldInfoTest.x_max = 100
-    WorldInfoTest.y_min = 0
-    WorldInfoTest.y_max = 100
-    WorldInfoTest.distance_max = math.sqrt((WorldInfoTest.x_max-WorldInfoTest.x_min)**2 + \
-        (WorldInfoTest.y_max-WorldInfoTest.y_min)**2 + (WorldInfoTest.z_max-WorldInfoTest.z_min)**2)
+    WorldInfoTest = WorldInfo([0,100], [0,100])
 
     num_agents = 4
     num_tasks = 12
 
-    AgentList, TaskList = hp.create_agents_and_tasks(num_agents, num_tasks, WorldInfoTest, config_file_name)
+    # create a list of Agent(s) and Task(s)
+    AgentList, TaskList = hp.create_agents_and_tasks(num_agents, num_tasks, WorldInfoTest, config_data)
 
-
-
-    # CBBA_solver = CBBA()
+    # create a CBBA solver
+    CBBA_solver = CBBA(AgentList, TaskList, config_data)

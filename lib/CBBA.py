@@ -5,7 +5,7 @@ sys.path.append(os.getcwd()+'/lib')
 import time
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 from Agent import Agent
 from Task import Task
@@ -33,10 +33,15 @@ class CBBA(object):
     TaskList: list # 1D list, each entry is a dataclass Task
     
 
-    def __init__(self, AgentList: list, TaskList: list):
+    def __init__(self, AgentList: list, TaskList: list, config_data: str):
         """
         Constructor
         Initialize CBBA Parameters
+
+        config_data:
+            config_file_name = "config.json"
+            json_file = open(config_file_name)
+            config_data = json.load(json_file)
         """
 
         self.num_agents = len(AgentList)
@@ -44,9 +49,9 @@ class CBBA(object):
         self.max_depth = len(TaskList)
 
         # List agent types 
-        self.agent_types = ["quad", "car"]
+        self.agent_types = config_data["AGENT_TYPES"]
         # List task types
-        self.task_types = ["track", "rescue"]
+        self.task_types = config_data["TASK_TYPES"]
 
         # Initialize Compatibility Matrix 
         # self.compatibility_mat = [0*len(self.task_types)]*len(self.agent_types)

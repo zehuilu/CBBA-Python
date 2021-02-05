@@ -7,20 +7,22 @@ import json
 import math
 import random
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from Agent import Agent
 from Task import Task
 from WorldInfo import WorldInfo
 
 
-def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: WorldInfo, config_file_name: str):
+def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: WorldInfo, config_data):
     """
     Generate agents and tasks based on a json configuration file.
-    """
 
-    # Read the configuration from the json file
-    json_file = open(config_file_name)
-    config_data = json.load(json_file)
+    config_data:
+        config_file_name = "config.json"
+        json_file = open(config_file_name)
+        config_data = json.load(json_file)
+
+    """
 
     # Create some default agents
 
@@ -79,18 +81,18 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
 
     # create random agents (quad only)
     for idx_agent in range(0, num_agents):
-        AgentList.append(task_track_default)
+        AgentList.append(agent_quad_default)
         AgentList[idx_agent].agent_id = idx_agent
-        AgentList[idx_agent].x = random.randint(WorldInfoInput.x_min, WorldInfoInput.x_max)
-        AgentList[idx_agent].y = random.randint(WorldInfoInput.y_min, WorldInfoInput.y_max)
+        AgentList[idx_agent].x = random.randint(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+        AgentList[idx_agent].y = random.randint(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
         AgentList[idx_agent].z = 0
 
     # create random tasks (track only)
     for idx_task in range(0, num_tasks):
-        TaskList.append(agent_quad_default)
+        TaskList.append(task_track_default)
         TaskList[idx_task].task_id = idx_task
-        TaskList[idx_task].x = random.randint(WorldInfoInput.x_min, WorldInfoInput.x_max)
-        TaskList[idx_task].y = random.randint(WorldInfoInput.y_min, WorldInfoInput.y_max)
+        TaskList[idx_task].x = random.randint(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+        TaskList[idx_task].y = random.randint(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
         TaskList[idx_task].z = 0
 
     return AgentList, TaskList
