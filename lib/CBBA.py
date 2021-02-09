@@ -206,10 +206,6 @@ class CBBA(object):
                     # self.scores_list[idx_agent] = hp.remove_from_list(self.scores_list[idx_agent], idx_remove)
 
                     self.bundle_list[idx_agent][idx] = -1
-                    ####
-
-
-
 
 
     def bundle_add(self, idx_agent: int):
