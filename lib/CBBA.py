@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from Agent import Agent
 from Task import Task
+from WorldInfo import WorldInfo
 import HelperLibrary as hp
 
 
@@ -29,11 +30,14 @@ class CBBA(object):
     winners_list: list # 2D list
     winner_bid_list: list # 2D list
 
+    graph: list # 2D list represents the structure of graph
+
     AgentList: list # 1D list, each entry is a dataclass Agent
     TaskList: list # 1D list, each entry is a dataclass Task
+    WorldInfo: WorldInfo # a dataclass WorldInfo
     
 
-    def __init__(self, AgentList: list, TaskList: list, config_data: str):
+    def __init__(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, config_data: str):
         """
         Constructor
         Initialize CBBA Parameters
@@ -54,18 +58,96 @@ class CBBA(object):
         self.task_types = config_data["TASK_TYPES"]
 
         # Initialize Compatibility Matrix 
-        # self.compatibility_mat = [0*len(self.task_types)]*len(self.agent_types)
-        self.compatibility_mat = np.zeros((len(self.agent_types), len(self.task_types)))
+        self.compatibility_mat = [[0] * len(self.task_types)] * len(self.agent_types)
 
         # FOR USER TO DO: Set agent-task pairs (which types of agents can do which types of tasks)
-        self.compatibility_mat[0, 0] = 1 # quadrotor for track
-        self.compatibility_mat[1, 1] = 1 # car for rescue
+        self.compatibility_mat[self.agent_types.index("quad")][self.task_types.index("track")] = 1 # quadrotor for track
+        self.compatibility_mat[self.agent_types.index("car")][self.task_types.index("rescue")] = 1 # car for rescue
+
+        # world information
+        self.WorldInfo = WorldInfoInput
+
+        # Fully connected graph
+        # 2D list
+        self.graph = np.logical_not(np.identity(self.num_agents))
+
+        # initialize these properties
+        self.bundle_list = [[-1] * self.max_depth] * self.num_agents
+        self.path_list = [[-1] * self.max_depth] * self.num_agents
+        self.times_list = [[-1] * self.max_depth] * self.num_agents
+        self.scores_list = [[-1] * self.max_depth] * self.num_agents
+        self.bid_list = [[0] * self.num_tasks] * self.num_agents
+        self.winners_list = [[0] * self.num_tasks] * self.num_agents
+        self.winner_bid_list = [[0] * self.num_tasks] * self.num_agents
 
 
-    # def solve(self):
+    def solve(self):
+        """
+        Main CBBA Function
+        """
+
+        # Initialize working variables
+        # Current iteration
+        iter_idx = 1
+        # Matrix of time of updates from the current winners
+        time_mat = [[0] * self.num_agents] * self.num_agents
+        iter_prev = iter_idx - 1
+        done_flag = False
+
+        # Main CBBA loop (runs until convergence)
+        while (not done_flag):
 
 
+            # 1. Communicate
+            # Perform consensus on winning agents and bid values (synchronous)
+            time_mat = self.communicate(time_mat, iter_idx)
 
+
+            # 2. Run CBBA bundle building/updating
+            # Run CBBA on each agent (decentralized but synchronous)
+            for idx_agent in range(0, self.num_agents):
+                new_bid_flag = self.bundle(idx_agent)
+
+                # Update last time things changed (needed for convergence but will be removed in the final implementation)
+                if new_bid_flag:
+                    iter_prev = iter_idx
+
+            
+            # 3. Convergence Check
+            # Determine if the assignment is over (implemented for now, but later this loop will just run forever)
+            if ( (iter_idx - iter_prev) > self.num_agents ):
+                done_flag = True
+            elif ( (iter_idx - iter_prev) > (2*self.num_agents) ):
+                print("Algorithm did not converge due to communication trouble")
+                doneFlag = True
+            else:
+                # Maintain loop
+                iter_idx += 1
+
+
+        # Map path and bundle values to actual task indices
+        for n in range(0, self.num_agents):
+            for m in range(0, self.max_depth):
+                if ( self.bundle_list[n][m] == -1 ):
+                    break
+                else:
+                    self.bundle_list[n][m] = self.TaskList[self.bundle_list[n][m]].task_id
+
+                if (self.path_list[n][m] == -1):
+                    break
+                else:
+                    self.path_list[n][m] = self.TaskList[self.path_list[n][m]].task_id
+
+        # Compute the total score of the CBBA assignment
+        score_total = 0
+        for n in range(0, self.num_agents):
+            for m in range(0, self.max_depth):
+                if (self.scores_list[n][m] > -1):
+                    score_total += self.scores_list[n][m]
+                else:
+                    break
+
+        return score_total
 
 
     def bundle(self, idx_agent: int):
@@ -123,8 +205,11 @@ class CBBA(object):
                     # self.times_list[idx_agent] = hp.remove_from_list(self.times_list[idx_agent], idx_remove)
                     # self.scores_list[idx_agent] = hp.remove_from_list(self.scores_list[idx_agent], idx_remove)
 
-
                     self.bundle_list[idx_agent][idx] = -1
+                    ####
+
+
+
 
 
     def bundle_add(self, idx_agent: int):
@@ -217,6 +302,211 @@ class CBBA(object):
                 bundle_full_flag = True
 
         return new_bid_flag
+
+
+    def communicate(self, time_mat: list, iter_idx: int):
+        """
+        Runs consensus between neighbors. Checks for conflicts and resolves among agents.
+        This is a message passing scheme described in Table 1 of: "Consensus-Based Decentralized Auctions for Robust Task Allocation", 
+        H.-L. Choi, L. Brunet, and J. P. How, IEEE Transactions on Robotics, Vol. 25, (4): 912  926, August 2009
+        """
+
+        # time_mat is the matrix of time of updates from the current winners
+        # iter_idx is the current iteration
+
+        time_mat_new = time_mat.copy()
+
+        # Copy data
+        old_z = self.winners_list.copy()
+        old_y = self.winner_bid_list.copy()
+        z = old_z.copy()
+        y = old_y.copy()
+
+        epsilon = 10e-6
+
+        # Start communication between agents
+        # sender   = k
+        # receiver = i
+        # task     = j
+
+        for k in range(0, self.num_agents):
+            for i in range(0, self.num_agents):
+                # if (self.grapg[k][i] == 1)
+                if ( abs(self.graph[k][i]-1) <= 1e-3 ):
+                    for j in range(0, self.num_tasks):
+                        # Implement table for each task
+
+                        # Entries 1 to 4: Sender thinks he has the task
+                        if ( old_z[k][j] == k ):
+                            
+                            # Entry 1: Update or Leave
+                            if ( z[i][j] == i ):
+                                if ( (old_y[k][j] - y[i][j]) > epsilon ): # Update
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                elif ( abs( old_y[k][j] - y[i][j] ) <= epsilon ): # Equal scores
+                                    if ( z[i][j] > old_z[k][j] ): # Tie-break based on smaller index
+                                        z[i][j] = old_z[k][j]
+                                        y[i][j] = old_y[k][j]
+
+                            # Entry 2: Update
+                            elif ( z[i][j] == k ):
+                                z[i][j] = old_z[k][j]
+                                y[i][j] = old_y[k][j]
+                    
+                            # Entry 3: Update or Leave
+                            elif ( z[i][j] > 0 ):
+                                if ( time_mat[k][z[i][j]] > time_mat_new[i][[i][j]] ): # Update
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                elif ( (old_y[k][j] - y[i][j]) > epsilon ): # Update
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                elif ( abs(old_y[k][j] - y[i][j]) <= epsilon ): # Equal scores
+                                    if ( z[i][j] > old_z[k][j] ): # Tie-break based on smaller index
+                                        z[i][j] = old_z[k][j]
+                                        y[i][j] = old_y[k][j]
+
+                            # Entry 4: Update
+                            elif ( z[i][j] == 0 ):
+                                z[i][j] = old_z[k][j]
+                                y[i][j] = old_y[k][j]
+
+                            else:
+                                raise Exception("Unknown winner value: please revise!")
+
+
+                        # Entries 5 to 8: Sender thinks receiver has the task
+                        elif ( old_z[k][j] == i ):
+
+                            # Entry 5: Leave
+                            if ( z[i][j] == i ):
+                                # Do nothing
+                                pass
+                                
+                            # Entry 6: Reset
+                            elif ( z[i][j] == k ) :
+                                z[i][j] = 0
+                                y[i][j] = 0
+
+                            # Entry 7: Reset or Leave
+                            elif ( z[i][j] > 0 ):
+                                if( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ): # Reset
+                                    z[i][j] = 0
+                                    y[i][j] = 0
+                                
+                            # Entry 8: Leave
+                            elif ( z[i][j] == 0 ):
+                                # Do nothing
+                                pass
+
+                            else:
+                                raise Exception("Unknown winner value: please revise!")
+
+
+                        # Entries 9 to 13: Sender thinks someone else has the task
+                        elif ( old_z[k][j] > 0 ):
+                 
+                            # Entry 9: Update or Leave
+                            if ( z[i][j] == i ):
+                                if ( time_mat[k][old_z[k][j]] > time_mat_new[i][old_z[k][j]] ):
+                                    if ( (old_y[k][j] - y[i][j]) > epsilon ):
+                                        z[i][j] = old_z[k][j] # Update
+                                        y[i][j] = old_y[k][j]
+                                    elif( abs(old_y[k][j] - y[i][j]) <= epsilon ): # Equal scores
+                                        if( z[i][j] > old_z[k][j] ): # Tie-break based on smaller index
+                                            z[i][j] = old_z[k][j]
+                                            y[i][j] = old_y[k][j]
+
+                            # Entry 10: Update or Reset
+                            elif ( z[i][j] == k ):
+                                if ( time_mat[k][old_z[k][j]] > time_mat_new[i][old_z[k][j]] ): # Update
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                else: # Reset
+                                    z[i][j] = 0
+                                    y[i][j] = 0
+
+                            # Entry 11: Update or Leave
+                            elif ( z[i][j] == old_z[k][j] ):
+                                if ( time_mat[k][old_z[k][j]] > time_mat_new[i][old_z[k][j]] ): # Update
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+
+                            # Entry 12: Update, Reset or Leave
+                            elif ( z[i][j] > 0 ):
+                                if ( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ):
+                                    if ( time_mat[k][old_z[k][j]] >= time_mat_new[i][old_z[k][j]] ): # Update
+                                        z[i][j] = old_z[k][j]
+                                        y[i][j] = old_y[k][j]
+                                    elif ( time_mat[k][old_z[k][j]] < time_mat_new[i][old_z[k][j]] ): # Reset
+                                        z[i][j] = 0
+                                        y[i][j] = 0
+                                    else:
+                                        raise Exception("Unknown condition for Entry 12: please revise!")
+                                else:
+                                    if ( time_mat[k][old_z[k][j]] > time_mat_new[i][old_z[k][j]] ):
+                                        if ( (old_y[k][j] - y[i][j]) > epsilon ): # Update
+                                            z[i][j] = old_z[k][j]
+                                            y[i][j] = old_y[k][j]
+                                        elif ( abs(old_y[k][j] - y[i][j]) <= epsilon ): # Equal scores
+                                            if ( z[i][j] > old_z[k][j] ): # Tie-break based on smaller index
+                                                z[i][j] = old_z[k][j]
+                                                y[i][j] = old_y[k][j]
+
+                            # Entry 13: Update or Leave
+                            elif ( z[i][j] == 0 ):
+                                if ( time_mat[k][old_z[k][j]] > time_mat_new[i][old_z[k][j]] ): # Update
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+
+                            else:
+                                raise Exception("Unknown winner value: please revise!")
+
+
+                        # Entries 14 to 17: Sender thinks no one has the task
+                        elif ( old_z[k][j] == 0 ):
+
+                            # Entry 14: Leave
+                            if ( z[i][j] == i ):
+                                # Do nothing
+                                pass
+
+                            # Entry 15: Update
+                            elif ( z[i][j] == k ):
+                                z[i][j] = old_z[k][j]
+                                y[i][j] = old_y[k][j]
+
+                            # Entry 16: Update or Leave
+                            elif ( z[i][j] > 0 ):
+                                if ( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ): # Update
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+
+                            # Entry 17: Leave
+                            elif ( z[i][j] == 0 ):
+                                # Do nothing
+                                pass
+                            else:
+                                raise Exception("Unknown winner value: please revise!")
+
+                        # End of table
+                        else:
+                            raise Exception("Unknown winner value: please revise!")
+
+                    # Update timestamps for all agents based on latest comm
+                    for n in range(0, self.num_agents):
+                        if ( (n != i) and (time_mat_new[i][n] < time_mat[k][n]) ):
+                            time_mat_new[i][n] = time_mat[k][n]
+
+                    time_mat_new[i][k] = iter_idx
+
+        # Copy data
+        for n in range (0, self.num_agents):
+            self.winners_list = z.copy()
+            self.winner_bid_list = y.copy()
+
+        return time_mat_new
 
 
     def compute_bid(self, idx_agent: int, feasibility: list):
@@ -362,7 +652,10 @@ class CBBA(object):
         return score, min_start, max_start
 
 
-
+    # def plot_assignment(self):
+    #     """
+    #     Plots CBBA outputs
+    #     """
 
 
 

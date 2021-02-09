@@ -77,23 +77,53 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     AgentList = []
     TaskList = []
 
-    # here is different than original CBBA codes
 
-    # create random agents (quad only)
+    # original CBBA codes
+    # create random agents
     for idx_agent in range(0, num_agents):
-        AgentList.append(agent_quad_default)
+        if (idx_agent/num_agents <= 0.5):
+            AgentList.append(agent_quad_default)
+        else:
+            AgentList.append(agent_car_default)
+
         AgentList[idx_agent].agent_id = idx_agent
-        AgentList[idx_agent].x = random.randint(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
-        AgentList[idx_agent].y = random.randint(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+        AgentList[idx_agent].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+        AgentList[idx_agent].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
         AgentList[idx_agent].z = 0
 
     # create random tasks (track only)
     for idx_task in range(0, num_tasks):
-        TaskList.append(task_track_default)
+        if (idx_task/num_tasks <= 0.5):
+            TaskList.append(task_track_default)
+        else:
+            TaskList.append(task_track_default)
+        
         TaskList[idx_task].task_id = idx_task
-        TaskList[idx_task].x = random.randint(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
-        TaskList[idx_task].y = random.randint(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
-        TaskList[idx_task].z = 0
+        TaskList[idx_task].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+        TaskList[idx_task].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+        TaskList[idx_task].z = random.uniform(WorldInfoInput.limit_z[0], WorldInfoInput.limit_z[1])
+        TaskList[idx_task].start_time = random.uniform(0, 100)
+        TaskList[idx_task].end_time = TaskList[idx_task].start_time + TaskList[idx_task].duration
+
+
+
+    # # here is different than original CBBA codes
+    # # create random agents (quad only)
+    # for idx_agent in range(0, num_agents):
+    #     AgentList.append(agent_quad_default)
+    #     AgentList[idx_agent].agent_id = idx_agent
+    #     AgentList[idx_agent].x = random.randint(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+    #     AgentList[idx_agent].y = random.randint(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+    #     AgentList[idx_agent].z = 0
+
+    # # create random tasks (track only)
+    # for idx_task in range(0, num_tasks):
+    #     TaskList.append(task_track_default)
+    #     TaskList[idx_task].task_id = idx_task
+    #     TaskList[idx_task].x = random.randint(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+    #     TaskList[idx_task].y = random.randint(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+    #     TaskList[idx_task].z = 0
+
 
     return AgentList, TaskList
 
