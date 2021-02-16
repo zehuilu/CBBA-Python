@@ -59,7 +59,7 @@ class CBBA(object):
         self.task_types = config_data["TASK_TYPES"]
 
         # Initialize Compatibility Matrix 
-        self.compatibility_mat = [[0] * len(self.task_types)] * len(self.agent_types)
+        self.compatibility_mat = [ [0] * len(self.task_types) for _ in range(len(self.agent_types)) ]
 
         # FOR USER TO DO: Set agent-task pairs (which types of agents can do which types of tasks)
         self.compatibility_mat[self.agent_types.index("quad")][self.task_types.index("track")] = 1 # quadrotor for track
@@ -79,7 +79,7 @@ class CBBA(object):
         # Current iteration
         iter_idx = 1
         # Matrix of time of updates from the current winners
-        time_mat = [[0] * self.num_agents] * self.num_agents
+        time_mat = [ [0] * self.num_agents for _ in range(self.num_agents) ]
         iter_prev = 0
         done_flag = False
 
@@ -162,13 +162,13 @@ class CBBA(object):
         self.graph = np.logical_not(np.identity(self.num_agents)).tolist()
 
         # initialize these properties
-        self.bundle_list = [[-1] * self.max_depth] * self.num_agents
-        self.path_list = [[-1] * self.max_depth] * self.num_agents
-        self.times_list = [[-1] * self.max_depth] * self.num_agents
-        self.scores_list = [[-1] * self.max_depth] * self.num_agents
-        self.bid_list = [[0] * self.num_tasks] * self.num_agents
-        self.winners_list = [[0] * self.num_tasks] * self.num_agents
-        self.winner_bid_list = [[0] * self.num_tasks] * self.num_agents
+        self.bundle_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+        self.path_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+        self.times_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+        self.scores_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+        self.bid_list = [ [0] * self.num_tasks for _ in range(self.num_agents) ]
+        self.winners_list = [ [0] * self.num_tasks for _ in range(self.num_agents) ]
+        self.winner_bid_list = [ [0] * self.num_tasks for _ in range(self.num_agents) ]
 
         self.agent_id_list = []
         self.agent_index_list = []
@@ -242,16 +242,15 @@ class CBBA(object):
         new_bid_flag  = False
 
         # Check if bundle is full, the bundle is full when bundle_full_flag is True
-        bundle_current = copy.deepcopy(self.bundle_list[idx_agent])
-        try:
-            bundle_current.index(-1)
+        index_array = np.where( np.array(self.bundle_list[idx_agent]) == -1 )[0]
+        if len(index_array) > 0.5:
             bundle_full_flag = False
-        except:
+        else:
             bundle_full_flag = True
         
         # Initialize feasibility matrix (to keep track of which j locations can be pruned)
         # feasibility = np.ones((self.num_tasks, self.max_depth+1))
-        feasibility = [ [1] * (self.max_depth+1) ] * self.num_tasks
+        feasibility = [ [1] * (self.max_depth+1) for _ in range(self.num_tasks) ]
 
         while not bundle_full_flag:
             # Update task values based on current assignment
@@ -286,8 +285,8 @@ class CBBA(object):
                             earliest = self.TaskList[all_values[i]].start_time
                             best_task = all_values[i]
                 
-                self.winners_list[idx_agnet][best_task] = self.AgentList[idx_agent].agent_id
-                self.winner_bid_list[idx_agnet][best_task] = self.bid_list[idx_agent][best_task]
+                self.winners_list[idx_agent][best_task] = self.AgentList[idx_agent].agent_id
+                self.winner_bid_list[idx_agent][best_task] = self.bid_list[idx_agent][best_task]
 
                 # self.path_list[idx_agent] = hp.insert_in_list(self.path_list[idx_agent], best_task, best_indices[best_task])
                 # self.times_list[idx_agent] = hp.insert_in_list(self.times_list[idx_agent], task_times[best_task], best_indices[best_task])
@@ -315,10 +314,10 @@ class CBBA(object):
                 break
 
             # Check if bundle is full
-            try:
-                self.bundle_list[idx_agent].index(-1)
+            index_array = np.where( np.array(self.bundle_list[idx_agent]) == -1 )[0]
+            if len(index_array) > 0.5:
                 bundle_full_flag = False
-            except:
+            else:
                 bundle_full_flag = True
 
         return new_bid_flag
@@ -376,7 +375,7 @@ class CBBA(object):
                     
                             # Entry 3: Update or Leave
                             elif ( z[i][j] > 0 ):
-                                if ( time_mat[k][z[i][j]] > time_mat_new[i][[i][j]] ): # Update
+                                if ( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ): # Update
                                     z[i][j] = old_z[k][j]
                                     y[i][j] = old_y[k][j]
                                 elif ( (old_y[k][j] - y[i][j]) > epsilon ): # Update
@@ -537,10 +536,8 @@ class CBBA(object):
         """
 
         # If the path is full then we cannot add any tasks to it
-        path_current = copy.deepcopy(self.path_list[idx_agent])
-        try:
-            idx_path_empty = path_current.index(-1)
-        except:
+        L = np.where( np.array(self.path_list[idx_agent]) == -1 )[0]
+        if len(L) == 0:
             best_indices = []
             task_times = []
             feasibility = []
@@ -557,12 +554,8 @@ class CBBA(object):
             if (self.compatibility_mat[self.AgentList[idx_agent].agent_type][self.TaskList[idx_task].task_type] > 0.5):
                 
                 # Check to make sure the path doesn't already contain task m
-                path_now = copy.deepcopy(self.path_list[idx_agent][0:idx_path_empty])
-                try:
-                    path_now.index(idx_task)
-                    # this task is already in my bundle
-                    pass
-                except:
+                index_array = np.where( np.array(self.path_list[idx_agent][0:L[0]]) == idx_task )[0]
+                if len(index_array) < 0.5:
                     # this task not in my bundle yet
                     # Find the best score attainable by inserting the score into the current path
                     best_bid   = 0
@@ -570,7 +563,7 @@ class CBBA(object):
                     best_time  = -1
 
                     # Try inserting task m in location j among other tasks and see if it generates a better new_path.
-                    for j in range(0, idx_path_empty):
+                    for j in range(0, L[0]+1):
                         if (feasibility[idx_task][j] == 1):
                             # Check new path feasibility, true to skip this iteration, false to be feasible
                             skip_flag = False
@@ -584,7 +577,7 @@ class CBBA(object):
                                 task_prev = Task(**Task_temp.__dict__)
                                 time_prev = self.times_list[idx_agent][j-1]
                             
-                            if (j == idx_path_empty):
+                            if (j == (L[0])):
                                 task_next = []
                                 time_next = []
                             else:
