@@ -5,6 +5,9 @@ sys.path.append(os.getcwd()+'/lib')
 import time
 import json
 import math
+import copy
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from dataclasses import dataclass, field
 import numpy as np
 from Agent import Agent
@@ -19,6 +22,9 @@ class CBBA(object):
     max_depth: int # maximum bundle depth
     agent_types: list
     task_types: list
+    space_limit_x: list # [min, max] x coordinate [meter]
+    space_limit_y: list # [min, max] y coordinate [meter]
+    space_limit_z: list # [min, max] z coordinate [meter]
 
     agent_id_list: list # 1D list
     agent_index_list: list # 1D list
@@ -31,13 +37,12 @@ class CBBA(object):
     winner_bid_list: list # 2D list
 
     graph: list # 2D list represents the structure of graph
-
     AgentList: list # 1D list, each entry is a dataclass Agent
     TaskList: list # 1D list, each entry is a dataclass Task
     WorldInfo: WorldInfo # a dataclass WorldInfo
     
 
-    def __init__(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, config_data: str):
+    def __init__(self, config_data: str):
         """
         Constructor
         Initialize CBBA Parameters
@@ -47,10 +52,6 @@ class CBBA(object):
             json_file = open(config_file_name)
             config_data = json.load(json_file)
         """
-
-        self.num_agents = len(AgentList)
-        self.num_tasks = len(TaskList)
-        self.max_depth = len(TaskList)
 
         # List agent types 
         self.agent_types = config_data["AGENT_TYPES"]
@@ -64,34 +65,22 @@ class CBBA(object):
         self.compatibility_mat[self.agent_types.index("quad")][self.task_types.index("track")] = 1 # quadrotor for track
         self.compatibility_mat[self.agent_types.index("car")][self.task_types.index("rescue")] = 1 # car for rescue
 
-        # world information
-        self.WorldInfo = WorldInfoInput
 
-        # Fully connected graph
-        # 2D list
-        self.graph = np.logical_not(np.identity(self.num_agents))
-
-        # initialize these properties
-        self.bundle_list = [[-1] * self.max_depth] * self.num_agents
-        self.path_list = [[-1] * self.max_depth] * self.num_agents
-        self.times_list = [[-1] * self.max_depth] * self.num_agents
-        self.scores_list = [[-1] * self.max_depth] * self.num_agents
-        self.bid_list = [[0] * self.num_tasks] * self.num_agents
-        self.winners_list = [[0] * self.num_tasks] * self.num_agents
-        self.winner_bid_list = [[0] * self.num_tasks] * self.num_agents
-
-
-    def solve(self):
+    def solve(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
         """
         Main CBBA Function
         """
+
+        # Initialize some lists given AgentList, TaskList, and WorldInfoInput.
+        self.settings(AgentList, TaskList, WorldInfoInput, max_depth)
+
 
         # Initialize working variables
         # Current iteration
         iter_idx = 1
         # Matrix of time of updates from the current winners
         time_mat = [[0] * self.num_agents] * self.num_agents
-        iter_prev = iter_idx - 1
+        iter_prev = 0
         done_flag = False
 
         # Main CBBA loop (runs until convergence)
@@ -150,6 +139,44 @@ class CBBA(object):
         return score_total
 
 
+    def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
+        """
+        Initialize some lists given AgentList, TaskList, and WorldInfoInput.
+        """
+
+        self.num_agents = len(AgentList)
+        self.num_tasks = len(TaskList)
+        self.max_depth = max_depth
+
+        self.AgentList = AgentList
+        self.TaskList = TaskList
+
+        # world information
+        self.WorldInfo = WorldInfoInput
+        self.space_limit_x = self.WorldInfo.limit_x
+        self.space_limit_y = self.WorldInfo.limit_y
+        self.space_limit_z = self.WorldInfo.limit_z
+
+        # Fully connected graph
+        # 2D list
+        self.graph = np.logical_not(np.identity(self.num_agents)).tolist()
+
+        # initialize these properties
+        self.bundle_list = [[-1] * self.max_depth] * self.num_agents
+        self.path_list = [[-1] * self.max_depth] * self.num_agents
+        self.times_list = [[-1] * self.max_depth] * self.num_agents
+        self.scores_list = [[-1] * self.max_depth] * self.num_agents
+        self.bid_list = [[0] * self.num_tasks] * self.num_agents
+        self.winners_list = [[0] * self.num_tasks] * self.num_agents
+        self.winner_bid_list = [[0] * self.num_tasks] * self.num_agents
+
+        self.agent_id_list = []
+        self.agent_index_list = []
+        for n in range(0, self.num_agents):
+            self.agent_id_list.append(self.AgentList[n].agent_id)
+            self.agent_index_list.append(n)
+
+
     def bundle(self, idx_agent: int):
         """
         Main CBBA bundle building/updating (runs on each individual agent)
@@ -173,26 +200,24 @@ class CBBA(object):
         for idx in range(0, self.max_depth):
             # If bundle(j) < 0, it means that all tasks up to task j are
             # still valid and in paths, the rest (j to MAX_DEPTH) are released
-            if (bundle_list[idx_agent][idx] < 0):
+            if (self.bundle_list[idx_agent][idx] < 0):
                 break
             else:
-                # Test if agent has been outbid for a task.  If it has,
-                # release it and all subsequent tasks in its path.
-                if (self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] != self.agent_index_list[idx_agent]): # !!!!!!!!!!!note this
+                # Test if agent has been outbid for a task.  If it has, release it and all subsequent tasks in its path.
+                if (self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] != self.agent_index_list[idx_agent]):
                     out_bid_for_task = True
 
                 if out_bid_for_task:
                     # The agent has lost a previous task, release this one too
-                    if (self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] == self.agent_index_list[idx_agent]): # !!!!!!!!!!!note this
+                    if (self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] == self.agent_index_list[idx_agent]):
                         # Remove from winner list if in there
                         self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] = 0
                         self.winner_bid_list[idx_agent][self.bundle_list[idx_agent][idx]] = 0
 
                     # Clear from path and times vectors and remove from bundle
-                    path_current = self.path_list[idx_agent]
+                    path_current = copy.deepcopy(self.path_list[idx_agent])
                     idx_remove = path_current.index(self.bundle_list[idx_agent][idx])
 
-                    # note this!!!!!!!!!!!!!!!!!
                     del self.path_list[idx_agent][idx_remove]
                     self.path_list[idx_agent] = self.path_list[idx_agent] + [-1]
                     del self.times_list[idx_agent][idx_remove]
@@ -217,7 +242,7 @@ class CBBA(object):
         new_bid_flag  = False
 
         # Check if bundle is full, the bundle is full when bundle_full_flag is True
-        bundle_current = self.bundle_list[idx_agent]
+        bundle_current = copy.deepcopy(self.bundle_list[idx_agent])
         try:
             bundle_current.index(-1)
             bundle_full_flag = False
@@ -226,17 +251,17 @@ class CBBA(object):
         
         # Initialize feasibility matrix (to keep track of which j locations can be pruned)
         # feasibility = np.ones((self.num_tasks, self.max_depth+1))
-        feasibility = [[1]*(self.max_depth+1)]*self.num_tasks
+        feasibility = [ [1] * (self.max_depth+1) ] * self.num_tasks
 
         while not bundle_full_flag:
             # Update task values based on current assignment
             [best_indices, task_times, feasibility] = self.compute_bid(idx_agent, feasibility)
 
             # Determine which assignments are available. D1, D2, D3 are all numpy 1D bool array
-            D1 = (( np.array(self.bid_list[idx_agent]) - np.array(self.winner_bid_list[idx_agent]) ) > epsilon)
+            D1 = ( ( np.array(self.bid_list[idx_agent]) - np.array(self.winner_bid_list[idx_agent]) ) > epsilon )
             D2 = ( abs(np.array(self.bid_list[idx_agent]) - np.array(self.winner_bid_list[idx_agent])) <= epsilon )
             # Tie-break based on agent index
-            D3 = ( agent_index_list[idx_agent] < np.array(winners_list[idx_agent]) )
+            D3 = ( self.agent_index_list[idx_agent] < np.array(self.winners_list[idx_agent]) )
 
             D = np.logical_or( D1, np.logical_and(D2,D3) )
 
@@ -249,10 +274,10 @@ class CBBA(object):
                 # Set new bid flag
                 new_bid_flag = True
 
-                # Check for tie
+                # Check for tie, return a 1D numpy array
                 all_values = np.where(array_max == value_max)[0]
                 if (len(all_values) == 1):
-                    best_task = all_values
+                    best_task = all_values[0]
                 else:
                     # Tie-break by which task starts first
                     earliest = sys.float_info.max
@@ -264,7 +289,6 @@ class CBBA(object):
                 self.winners_list[idx_agnet][best_task] = self.AgentList[idx_agent].agent_id
                 self.winner_bid_list[idx_agnet][best_task] = self.bid_list[idx_agent][best_task]
 
-                # note this
                 # self.path_list[idx_agent] = hp.insert_in_list(self.path_list[idx_agent], best_task, best_indices[best_task])
                 # self.times_list[idx_agent] = hp.insert_in_list(self.times_list[idx_agent], task_times[best_task], best_indices[best_task])
                 # self.scores_list[idx_agent] = hp.insert_in_list(self.scores_list[idx_agent], self.bid_list[idx_agent][best_task], best_indices[best_task])
@@ -310,13 +334,13 @@ class CBBA(object):
         # time_mat is the matrix of time of updates from the current winners
         # iter_idx is the current iteration
 
-        time_mat_new = time_mat.copy()
+        time_mat_new = copy.deepcopy(time_mat)
 
         # Copy data
-        old_z = self.winners_list.copy()
-        old_y = self.winner_bid_list.copy()
-        z = old_z.copy()
-        y = old_y.copy()
+        old_z = copy.deepcopy(self.winners_list)
+        old_y = copy.deepcopy(self.winner_bid_list)
+        z = copy.deepcopy(old_z)
+        y = copy.deepcopy(old_y)
 
         epsilon = 10e-6
 
@@ -369,6 +393,7 @@ class CBBA(object):
                                 y[i][j] = old_y[k][j]
 
                             else:
+                                print(z[i][j])
                                 raise Exception("Unknown winner value: please revise!")
 
 
@@ -397,6 +422,7 @@ class CBBA(object):
                                 pass
 
                             else:
+                                print(z[i][j])
                                 raise Exception("Unknown winner value: please revise!")
 
 
@@ -486,7 +512,7 @@ class CBBA(object):
                             else:
                                 raise Exception("Unknown winner value: please revise!")
 
-                        # End of table
+                            # End of table
                         else:
                             raise Exception("Unknown winner value: please revise!")
 
@@ -498,9 +524,8 @@ class CBBA(object):
                     time_mat_new[i][k] = iter_idx
 
         # Copy data
-        for n in range (0, self.num_agents):
-            self.winners_list = z.copy()
-            self.winner_bid_list = y.copy()
+        self.winners_list = copy.deepcopy(z)
+        self.winner_bid_list = copy.deepcopy(y)
 
         return time_mat_new
 
@@ -512,7 +537,7 @@ class CBBA(object):
         """
 
         # If the path is full then we cannot add any tasks to it
-        path_current = self.path_list[idx_agent]
+        path_current = copy.deepcopy(self.path_list[idx_agent])
         try:
             idx_path_empty = path_current.index(-1)
         except:
@@ -522,8 +547,8 @@ class CBBA(object):
             return best_indices, task_times, feasibility
 
         # Reset bids, best positions in path, and best times
-        best_indices = [0]*self.num_tasks
-        task_times = [0]*self.num_tasks
+        best_indices = [0] * self.num_tasks
+        task_times = [0] * self.num_tasks
 
         # For each task
         for idx_task in range(0, self.num_tasks):
@@ -532,7 +557,7 @@ class CBBA(object):
             if (self.compatibility_mat[self.AgentList[idx_agent].agent_type][self.TaskList[idx_task].task_type] > 0.5):
                 
                 # Check to make sure the path doesn't already contain task m
-                path_now = self.path_list[idx_agent][0:idx_path_empty]
+                path_now = copy.deepcopy(self.path_list[idx_agent][0:idx_path_empty])
                 try:
                     path_now.index(idx_task)
                     # this task is already in my bundle
@@ -546,30 +571,31 @@ class CBBA(object):
 
                     # Try inserting task m in location j among other tasks and see if it generates a better new_path.
                     for j in range(0, idx_path_empty):
-                        # for floating precision
-                        if (feasibility[idx_task][j] > 0.5):
+                        if (feasibility[idx_task][j] == 1):
                             # Check new path feasibility, true to skip this iteration, false to be feasible
                             skip_flag = False
-                            # if j == 0
-                            if (j < 0.5):
+
+                            if (j == 0):
                                 # insert at the beginning
                                 task_prev = []
                                 time_prev = []
                             else:
-                                task_prev = self.TaskList[self.path_list[idx_agent][j-1]]
+                                Task_temp = self.TaskList[self.path_list[idx_agent][j-1]]
+                                task_prev = Task(**Task_temp.__dict__)
                                 time_prev = self.times_list[idx_agent][j-1]
                             
-                            # if j == idx_path_empty
-                            if (j > idx_path_empty-0.5):
+                            if (j == idx_path_empty):
                                 task_next = []
                                 time_next = []
                             else:
-                                task_next = self.TaskList[self.path_list[idx_agent][j]]
+                                Task_temp = self.TaskList[self.path_list[idx_agent][j]]
+                                task_next = Task(**Task_temp.__dict__)
                                 time_next = self.times_list[idx_agent][j]
 
                             # Compute min and max start times and score
+                            Task_temp = self.TaskList[idx_task]
                             [score, min_start, max_start] = self.scoring_compute_score\
-                                (idx_agent, self.TaskList[idx_task], task_prev, time_prev, task_next, time_next)
+                                (idx_agent, Task(**Task_temp.__dict__), task_prev, time_prev, task_next, time_next)
 
                             if (min_start > max_start):
                                 # Infeasible path
@@ -578,7 +604,7 @@ class CBBA(object):
 
                             if not skip_flag:
                                 # Save the best score and task position
-                                if (score < best_bid):
+                                if (score > best_bid):
                                     best_bid = score
                                     best_index = j
                                     # Select min start time as optimal
@@ -595,7 +621,7 @@ class CBBA(object):
         return best_indices, task_times, feasibility
 
 
-    def scoring_compute_score(self, idx_agent: int, task_current: dataclass, task_prev: dataclass, time_prev, task_next: dataclass, time_next):
+    def scoring_compute_score(self, idx_agent: int, task_current: Task, task_prev: Task, time_prev, task_next: Task, time_next):
         """
         Compute marginal score of doing a task and returns the expected start time for the task.
         """
@@ -648,10 +674,65 @@ class CBBA(object):
         return score, min_start, max_start
 
 
-    # def plot_assignment(self):
-    #     """
-    #     Plots CBBA outputs
-    #     """
+    def plot_assignment(self):
+        """
+        Plots CBBA outputs
+        """
+
+        # offset to plot text
+        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
+
+        fig_3d = plt.figure(1)
+        ax_3d = fig_3d.add_subplot(111, projection='3d')
+
+        # plot tasks
+        for m in range(0, self.num_tasks):
+            ax_3d.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, [self.TaskList[m].start_time, self.TaskList[m].end_time], marker='x', color='red')
+            ax_3d.plot3D([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, [self.TaskList[m].start_time, self.TaskList[m].end_time], linestyle=':', color='red')
+            ax_3d.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, self.TaskList[m].start_time, "T"+str(m))
+
+        # plot agents
+        for n in range(0, self.num_agents):
+            ax_3d.scatter(self.AgentList[n].x, self.AgentList[n].y, 0, marker='o', c='C0')
+            ax_3d.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, 0.1, "A"+str(n))
+
+            # check if the path has something in it
+            if (self.path_list[n][0] > -1):
+                Task_prev = self.lookup_task(self.path_list[n][0])
+                ax_3d.plot3D([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], [0, self.times_list[n][0]])
+                ax_3d.plot3D([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], [self.times_list[n][0], self.times_list[n][0]+Task_prev.duration])
+
+                for m in range(1, len(self.path_list[n])):
+                    if (self.path_list[n][m] > -1):
+                        Task_next = self.lookup_task(self.path_list[n][m])
+                        ax_3d.plot3D([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], [self.times_list[n][m-1]+Task_prev.duration, self.times_list[n][m]])
+                        ax_3d.plot3D([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], [self.times_list[n][m], self.times_list[n][m]+Task_next.duration])
+                        Task_prev = Task_next
+                    else:
+                        break
+        
+        plt.title('Agent Paths with Time Windows')
+        ax_3d.set_xlabel("X")
+        ax_3d.set_ylabel("Y")
+        ax_3d.set_zlabel("Time")
+        ax_3d.set_xlim([self.space_limit_x[0]-0.2, self.space_limit_x[1]+0.2])
+        ax_3d.set_ylim([self.space_limit_y[0]-0.2, self.space_limit_y[1]+0.2])
+        # plt.legend(loc="upper left")
+        plt.show()
 
 
+    def lookup_task(self, task_id: int):
+        """
+        Look up a Task given the task ID.
+        """
 
+        TaskOutput = []
+        for m in range (0, self.num_tasks):
+            if (self.TaskList[m].task_id == task_id):
+                Task_temp = self.TaskList[m]
+                TaskOutput.append(Task(**Task_temp.__dict__))
+
+        if (len(TaskOutput) == 0):
+            raise Exception("Task " + str(task_id) + " not found!")
+
+        return TaskOutput[0]

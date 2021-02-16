@@ -25,17 +25,40 @@ if __name__ == "__main__":
     # create a world
     WorldInfoTest = WorldInfo([-2.0,2.5], [-1.5,5.5], [0.0,20.0])
 
+    # create a list of Agent(s) and Task(s)
     num_agents = 5
     num_tasks = 10
-
-    # create a list of Agent(s) and Task(s)
+    max_depth = num_tasks
     AgentList, TaskList = hp.create_agents_and_tasks(num_agents, num_tasks, WorldInfoTest, config_data)
 
     # create a CBBA solver
-    CBBA_solver = CBBA(AgentList, TaskList, WorldInfoTest, config_data)
+    CBBA_solver = CBBA(config_data)
 
     # solve
-    # score_total = CBBA_solver.solve()
+    score_total = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth)
+
+    print("score_total")
+    print(score_total)
+    print("agent_id_list")
+    print(CBBA_solver.agent_id_list)
+    print("agent_index_list")
+    print(CBBA_solver.agent_index_list)
+    print("bundle_list")
+    print(CBBA_solver.bundle_list)
+    print("path_list")
+    print(CBBA_solver.path_list)
+    print("times_list")
+    print(CBBA_solver.times_list)
+    print("scores_list")
+    print(CBBA_solver.scores_list)
+    print("bid_list")
+    print(CBBA_solver.bid_list)
+    print("winners_list")
+    print(CBBA_solver.winners_list)
+    print("winner_bid_list")
+    print(CBBA_solver.winner_bid_list)
 
 
+    # plot
+    CBBA_solver.plot_assignment()
     

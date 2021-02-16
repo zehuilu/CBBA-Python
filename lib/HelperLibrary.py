@@ -56,22 +56,22 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     # task start time (sec)
     task_track_default.start_time = float(config_data["TRACK_DEFAULT"]["START_TIME"])
     # task expiry time (sec)
-    task_track_default.end_time = float(config_data["TRACK_DEFAULT"]["START_TIME"])
+    task_track_default.end_time = float(config_data["TRACK_DEFAULT"]["END_TIME"])
     # task default duration (sec)
-    task_track_default.duration = float(config_data["TRACK_DEFAULT"]["START_TIME"])
+    task_track_default.duration = float(config_data["TRACK_DEFAULT"]["DURATION"])
 
     # Rescue
-    task_track_default = Task()
+    task_rescue_default = Task()
     # task type
-    task_track_default.task_type = config_data["TASK_TYPES"].index("rescue")
+    task_rescue_default.task_type = config_data["TASK_TYPES"].index("rescue")
     # task reward
-    task_track_default.task_value = float(config_data["RESCUE_DEFAULT"]["TASK_VALUE"])
+    task_rescue_default.task_value = float(config_data["RESCUE_DEFAULT"]["TASK_VALUE"])
     # task start time (sec)
-    task_track_default.start_time = float(config_data["RESCUE_DEFAULT"]["START_TIME"])
+    task_rescue_default.start_time = float(config_data["RESCUE_DEFAULT"]["START_TIME"])
     # task expiry time (sec)
-    task_track_default.end_time = float(config_data["RESCUE_DEFAULT"]["START_TIME"])
+    task_rescue_default.end_time = float(config_data["RESCUE_DEFAULT"]["END_TIME"])
     # task default duration (sec)
-    task_track_default.duration = float(config_data["RESCUE_DEFAULT"]["START_TIME"])
+    task_rescue_default.duration = float(config_data["RESCUE_DEFAULT"]["DURATION"])
 
     # create empty list, each element is a dataclass Agent() or Task()
     AgentList = []
@@ -81,11 +81,11 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     # original CBBA codes
     # create random agents
     for idx_agent in range(0, num_agents):
+        # create a new instance of dataclass agent_quad_default
         if (idx_agent/num_agents <= 0.5):
-            AgentList.append(agent_quad_default)
+            AgentList.append(Agent(**agent_quad_default.__dict__))
         else:
-            AgentList.append(agent_car_default)
-
+            AgentList.append(Agent(**agent_car_default.__dict__))
         AgentList[idx_agent].agent_id = idx_agent
         AgentList[idx_agent].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
         AgentList[idx_agent].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
@@ -93,10 +93,11 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
 
     # create random tasks (track only)
     for idx_task in range(0, num_tasks):
+        # create a new instance of dataclass task_track_default
         if (idx_task/num_tasks <= 0.5):
-            TaskList.append(task_track_default)
+            TaskList.append(Task(**task_track_default.__dict__))
         else:
-            TaskList.append(task_track_default)
+            TaskList.append(Task(**task_rescue_default.__dict__))
         
         TaskList[idx_task].task_id = idx_task
         TaskList[idx_task].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
@@ -104,6 +105,14 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
         TaskList[idx_task].z = random.uniform(WorldInfoInput.limit_z[0], WorldInfoInput.limit_z[1])
         TaskList[idx_task].start_time = random.uniform(0, 100)
         TaskList[idx_task].end_time = TaskList[idx_task].start_time + TaskList[idx_task].duration
+
+    # for n in range(0,num_tasks):
+    #     print("Task after")
+    #     print(str(TaskList[n].x)+", "+str(TaskList[n].y)+", "+str(TaskList[n].z))
+    #     print(str(TaskList[n].start_time)+" - "+str(TaskList[n].end_time))
+    # for m in range(0,num_agents):
+    #     print("Agent after")
+    #     print(str(AgentList[m].x)+", "+str(AgentList[m].y)+", "+str(AgentList[m].z))
 
 
 
