@@ -36,27 +36,16 @@ if __name__ == "__main__":
 
     # solve
     score_total = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth)
+    # the output is CBBA_solver.path_list
 
-    print("score_total")
-    print(score_total)
-    print("agent_id_list")
-    print(CBBA_solver.agent_id_list)
-    print("agent_index_list")
-    print(CBBA_solver.agent_index_list)
     print("bundle_list")
     print(CBBA_solver.bundle_list)
     print("path_list")
     print(CBBA_solver.path_list)
     print("times_list")
     print(CBBA_solver.times_list)
-    print("scores_list")
-    print(CBBA_solver.scores_list)
-    print("bid_list")
-    print(CBBA_solver.bid_list)
     print("winners_list")
     print(CBBA_solver.winners_list)
-    print("winner_bid_list")
-    print(CBBA_solver.winner_bid_list)
 
 
     # plot

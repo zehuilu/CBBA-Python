@@ -8,6 +8,7 @@ import math
 import copy
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 from dataclasses import dataclass, field
 import numpy as np
 from Agent import Agent
@@ -25,6 +26,7 @@ class CBBA(object):
     space_limit_x: list # [min, max] x coordinate [meter]
     space_limit_y: list # [min, max] y coordinate [meter]
     space_limit_z: list # [min, max] z coordinate [meter]
+    time_interval_list: list # time interval for all the agents and tasks
 
     agent_id_list: list # 1D list
     agent_index_list: list # 1D list
@@ -57,6 +59,9 @@ class CBBA(object):
         self.agent_types = config_data["AGENT_TYPES"]
         # List task types
         self.task_types = config_data["TASK_TYPES"]
+        # time interval for all the agents and tasks
+        self.time_interval_list = [ min(int(config_data["TRACK_DEFAULT"]["START_TIME"]), int(config_data["RESCUE_DEFAULT"]["START_TIME"])), \
+            max(int(config_data["TRACK_DEFAULT"]["END_TIME"]), int(config_data["RESCUE_DEFAULT"]["END_TIME"])) ]
 
         # Initialize Compatibility Matrix 
         self.compatibility_mat = [ [0] * len(self.task_types) for _ in range(len(self.agent_types)) ]
@@ -672,16 +677,19 @@ class CBBA(object):
         Plots CBBA outputs
         """
 
-        # offset to plot text
-        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
-
+        # 3D plot
         fig_3d = plt.figure(1)
         ax_3d = fig_3d.add_subplot(111, projection='3d')
+        color_list = np.linspace(0, 0.9, self.num_agents)
+        # offset to plot text in 3D space
+        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
 
         # plot tasks
         for m in range(0, self.num_tasks):
-            ax_3d.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, [self.TaskList[m].start_time, self.TaskList[m].end_time], marker='x', color='red')
-            ax_3d.plot3D([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, [self.TaskList[m].start_time, self.TaskList[m].end_time], linestyle=':', color='red')
+            ax_3d.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, \
+                [self.TaskList[m].start_time, self.TaskList[m].end_time], marker='x', color='red')
+            ax_3d.plot3D([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, \
+                [self.TaskList[m].start_time, self.TaskList[m].end_time], linestyle=':', color='red', linewidth=3)
             ax_3d.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, self.TaskList[m].start_time, "T"+str(m))
 
         # plot agents
@@ -692,15 +700,19 @@ class CBBA(object):
             # check if the path has something in it
             if (self.path_list[n][0] > -1):
                 Task_prev = self.lookup_task(self.path_list[n][0])
-                ax_3d.plot3D([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], [0, self.times_list[n][0]])
-                ax_3d.plot3D([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], [self.times_list[n][0], self.times_list[n][0]+Task_prev.duration])
+                ax_3d.plot3D([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], \
+                    [0, self.times_list[n][0]], linewidth=2, c=cm.hot(color_list[n]))
+                ax_3d.plot3D([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], \
+                    [self.times_list[n][0], self.times_list[n][0]+Task_prev.duration], linewidth=2, c=cm.hot(color_list[n]))
 
                 for m in range(1, len(self.path_list[n])):
                     if (self.path_list[n][m] > -1):
                         Task_next = self.lookup_task(self.path_list[n][m])
-                        ax_3d.plot3D([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], [self.times_list[n][m-1]+Task_prev.duration, self.times_list[n][m]])
-                        ax_3d.plot3D([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], [self.times_list[n][m], self.times_list[n][m]+Task_next.duration])
-                        Task_prev = Task_next
+                        ax_3d.plot3D([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], \
+                            [self.times_list[n][m-1]+Task_prev.duration, self.times_list[n][m]], linewidth=2, c=cm.hot(color_list[n]))
+                        ax_3d.plot3D([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], \
+                            [self.times_list[n][m], self.times_list[n][m]+Task_next.duration], linewidth=2, c=cm.hot(color_list[n]))
+                        Task_prev = Task(**Task_next.__dict__)
                     else:
                         break
         
@@ -708,10 +720,89 @@ class CBBA(object):
         ax_3d.set_xlabel("X")
         ax_3d.set_ylabel("Y")
         ax_3d.set_zlabel("Time")
-        ax_3d.set_xlim([self.space_limit_x[0]-0.2, self.space_limit_x[1]+0.2])
-        ax_3d.set_ylim([self.space_limit_y[0]-0.2, self.space_limit_y[1]+0.2])
-        # plt.legend(loc="upper left")
+        ax_3d.set_aspect('auto')
+        self.set_axes_equal_xy(ax_3d)
+
+
+        # # plot agent schedules
+        # fig_schdule = plt.figure(2)
+        # fig_schdule.suptitle("Schedules for Agents")
+        # for idx_agent in range(0, self.num_agents):
+        #     ax = plt.subplot(self.num_agents, 1, idx_agent+1)
+        #     ax.set_title("Agent "+str(idx_agent))
+        #     ax.set_xlabel("Time [sec]")
+        #     ax_3d.set_ylim([0.95, 1.05])
+
+        #     for idx_path in range (0, len(self.path_list[idx_agent])):
+        #         if (self.path_list[idx_agent][idx_path] > -1):
+        #             task_current = self.lookup_task(self.path_list[idx_agent][idx_path])
+        #             ax.plot([self.times_list[idx_agent][idx_path], \
+        #                 self.times_list[idx_agent][idx_path]+task_current.duration], [1,1], \
+        #                 linestyle='-', linewidth=10, c=cm.hot(color_list[idx_agent]))
+        #             ax.plot([task_current.start_time, task_current.end_time], [1,1], linestyle='--', \
+        #                 c=cm.hot(color_list[idx_agent]))
+        #         else:
+        #             break
+
         plt.show()
+
+
+    def set_axes_equal_xy(self, ax):
+        '''
+        Make only x and y axes of 3D plot have equal scale. This is one possible solution to Matplotlib's
+        ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
+        Reference: https://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to
+
+        Input
+        ax: a matplotlib axis, e.g., as output from plt.gca().
+        '''
+
+        x_limits = [self.space_limit_x[0]-0.2, self.space_limit_x[1]+0.2]
+        y_limits = [self.space_limit_y[0]-0.2, self.space_limit_y[1]+0.2]
+
+        x_range = abs(x_limits[1] - x_limits[0])
+        x_middle = np.mean(x_limits)
+        y_range = abs(y_limits[1] - y_limits[0])
+        y_middle = np.mean(y_limits)
+
+        # The plot bounding box is a sphere in the sense of the infinity
+        # norm, hence I call half the max range the plot radius.
+        plot_radius = 0.5*max([x_range, y_range])
+
+        ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+        ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+        ax.set_zlim3d(self.time_interval_list)
+
+
+    def set_axes_equal_all(self, ax):
+        '''
+        Make axes of 3D plot have equal scale so that spheres appear as spheres,
+        cubes as cubes, etc..  This is one possible solution to Matplotlib's
+        ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
+        Reference: https://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to
+
+        Input
+        ax: a matplotlib axis, e.g., as output from plt.gca().
+        '''
+
+        x_limits = [self.space_limit_x[0]-0.2, self.space_limit_x[1]+0.2]
+        y_limits = [self.space_limit_y[0]-0.2, self.space_limit_y[1]+0.2]
+        z_limits = copy.deepcopy(self.time_interval_list)
+
+        x_range = abs(x_limits[1] - x_limits[0])
+        x_middle = np.mean(x_limits)
+        y_range = abs(y_limits[1] - y_limits[0])
+        y_middle = np.mean(y_limits)
+        z_range = abs(z_limits[1] - z_limits[0])
+        z_middle = np.mean(z_limits)
+
+        # The plot bounding box is a sphere in the sense of the infinity
+        # norm, hence I call half the max range the plot radius.
+        plot_radius = 0.5*max([x_range, y_range, z_range])
+
+        ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+        ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+        ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
 
 
     def lookup_task(self, task_id: int):

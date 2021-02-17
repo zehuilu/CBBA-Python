@@ -106,13 +106,13 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
         TaskList[idx_task].start_time = random.uniform(0, 100)
         TaskList[idx_task].end_time = TaskList[idx_task].start_time + TaskList[idx_task].duration
 
-    # for n in range(0,num_tasks):
-    #     print("Task after")
-    #     print(str(TaskList[n].x)+", "+str(TaskList[n].y)+", "+str(TaskList[n].z))
-    #     print(str(TaskList[n].start_time)+" - "+str(TaskList[n].end_time))
-    # for m in range(0,num_agents):
-    #     print("Agent after")
-    #     print(str(AgentList[m].x)+", "+str(AgentList[m].y)+", "+str(AgentList[m].z))
+    for n in range(0,num_tasks):
+        print("Task after")
+        print(str(TaskList[n].x)+", "+str(TaskList[n].y)+", "+str(TaskList[n].z))
+        print(str(TaskList[n].start_time)+" - "+str(TaskList[n].end_time))
+    for m in range(0,num_agents):
+        print("Agent after")
+        print(str(AgentList[m].x)+", "+str(AgentList[m].y)+", "+str(AgentList[m].z))
 
 
 
