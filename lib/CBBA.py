@@ -67,8 +67,14 @@ class CBBA(object):
         self.compatibility_mat = [ [0] * len(self.task_types) for _ in range(len(self.agent_types)) ]
 
         # FOR USER TO DO: Set agent-task pairs (which types of agents can do which types of tasks)
-        self.compatibility_mat[self.agent_types.index("quad")][self.task_types.index("track")] = 1 # quadrotor for track
-        self.compatibility_mat[self.agent_types.index("car")][self.task_types.index("rescue")] = 1 # car for rescue
+        try:
+            self.compatibility_mat[self.agent_types.index("quad")][self.task_types.index("track")] = 1 # quadrotor for track
+        except:
+            pass
+        try:
+            self.compatibility_mat[self.agent_types.index("car")][self.task_types.index("rescue")] = 1 # car for rescue
+        except:
+            pass
 
 
     def solve(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
@@ -141,7 +147,11 @@ class CBBA(object):
                 else:
                     break
 
-        return score_total
+        # output the result path for each agent, delete all -1
+        path_list_output = [ list( filter(lambda a: a != -1, self.path_list[i]) ) \
+            for i in range(len(self.path_list)) ]
+
+        return path_list_output
 
 
     def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
@@ -651,7 +661,7 @@ class CBBA(object):
                 max_start = min(task_current.end_time, time_next - task_current.duration - dt)
 
             # Compute score
-            reward = task_current.task_value * math.exp(-task_current.discount * (min_start-task_current.start_time))
+            reward = task_current.task_value * math.exp((-task_current.discount) * (min_start-task_current.start_time))
 
             # Subtract fuel cost. Implement constant fuel to ensure DMG.
             # NOTE: This is a fake score since it double counts fuel. Should
@@ -680,47 +690,66 @@ class CBBA(object):
         # 3D plot
         fig_3d = plt.figure(1)
         ax_3d = fig_3d.add_subplot(111, projection='3d')
-        color_list = np.linspace(0, 0.9, self.num_agents)
         # offset to plot text in 3D space
         offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
 
         # plot tasks
         for m in range(0, self.num_tasks):
+            # track task is red
+            if self.TaskList[m].task_type == 0:
+                color_str = 'red'
+            # rescue task is blue
+            else:
+                color_str = 'blue'
+
             ax_3d.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, \
-                [self.TaskList[m].start_time, self.TaskList[m].end_time], marker='x', color='red')
+                [self.TaskList[m].start_time, self.TaskList[m].end_time], marker='x', color=color_str)
             ax_3d.plot3D([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, \
-                [self.TaskList[m].start_time, self.TaskList[m].end_time], linestyle=':', color='red', linewidth=3)
+                [self.TaskList[m].start_time, self.TaskList[m].end_time], linestyle=':', color=color_str, linewidth=3)
             ax_3d.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, self.TaskList[m].start_time, "T"+str(m))
 
         # plot agents
         for n in range(0, self.num_agents):
-            ax_3d.scatter(self.AgentList[n].x, self.AgentList[n].y, 0, marker='o', c='C0')
+            # quad agent is red
+            if self.AgentList[n].agent_type == 0:
+                color_str = 'red'
+            # car agent is blue
+            else:
+                color_str = 'blue'
+            ax_3d.scatter(self.AgentList[n].x, self.AgentList[n].y, 0, marker='o', color=color_str)
             ax_3d.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, 0.1, "A"+str(n))
 
             # check if the path has something in it
             if (self.path_list[n][0] > -1):
                 Task_prev = self.lookup_task(self.path_list[n][0])
                 ax_3d.plot3D([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], \
-                    [0, self.times_list[n][0]], linewidth=2, c=cm.hot(color_list[n]))
+                    [0, self.times_list[n][0]], linewidth=2, color=color_str)
                 ax_3d.plot3D([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], \
-                    [self.times_list[n][0], self.times_list[n][0]+Task_prev.duration], linewidth=2, c=cm.hot(color_list[n]))
+                    [self.times_list[n][0], self.times_list[n][0]+Task_prev.duration], linewidth=2, color=color_str)
 
                 for m in range(1, len(self.path_list[n])):
                     if (self.path_list[n][m] > -1):
                         Task_next = self.lookup_task(self.path_list[n][m])
                         ax_3d.plot3D([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], \
-                            [self.times_list[n][m-1]+Task_prev.duration, self.times_list[n][m]], linewidth=2, c=cm.hot(color_list[n]))
+                            [self.times_list[n][m-1]+Task_prev.duration, self.times_list[n][m]], linewidth=2, color=color_str)
                         ax_3d.plot3D([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], \
-                            [self.times_list[n][m], self.times_list[n][m]+Task_next.duration], linewidth=2, c=cm.hot(color_list[n]))
+                            [self.times_list[n][m], self.times_list[n][m]+Task_next.duration], linewidth=2, color=color_str)
                         Task_prev = Task(**Task_next.__dict__)
-                    else:
-                        break
         
         plt.title('Agent Paths with Time Windows')
         ax_3d.set_xlabel("X")
         ax_3d.set_ylabel("Y")
         ax_3d.set_zlabel("Time")
         ax_3d.set_aspect('auto')
+
+        # set legends
+        colors = ["red", "blue", "red", "blue"]
+        marker_list = ["o", "o", "x", "x"]
+        labels = ["Agent type 1", "Agent type 2", "Task type 1", "Task type 2"]
+        f = lambda m,c: plt.plot([],[],marker=m, color=c, ls="none")[0]
+        handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
+        legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
+
         self.set_axes_equal_xy(ax_3d)
 
 
@@ -731,18 +760,24 @@ class CBBA(object):
         #     ax = plt.subplot(self.num_agents, 1, idx_agent+1)
         #     ax.set_title("Agent "+str(idx_agent))
         #     ax.set_xlabel("Time [sec]")
-        #     ax_3d.set_ylim([0.95, 1.05])
+        #     ax.set_ylim([0.95, 1.05])
+
+        #     # quad agent is red
+        #     if self.AgentList[idx_agent].agent_type == 0:
+        #         color_str = 'red'
+        #     # car agent is blue
+        #     else:
+        #         color_str = 'blue'
 
         #     for idx_path in range (0, len(self.path_list[idx_agent])):
         #         if (self.path_list[idx_agent][idx_path] > -1):
         #             task_current = self.lookup_task(self.path_list[idx_agent][idx_path])
         #             ax.plot([self.times_list[idx_agent][idx_path], \
         #                 self.times_list[idx_agent][idx_path]+task_current.duration], [1,1], \
-        #                 linestyle='-', linewidth=10, c=cm.hot(color_list[idx_agent]))
+        #                 linestyle='-', linewidth=10, color=color_str)
         #             ax.plot([task_current.start_time, task_current.end_time], [1,1], linestyle='--', \
-        #                 c=cm.hot(color_list[idx_agent]))
-        #         else:
-        #             break
+        #                 color=color_str)
+
 
         plt.show()
 

@@ -82,10 +82,13 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     # create random agents
     for idx_agent in range(0, num_agents):
         # create a new instance of dataclass agent_quad_default
+        
         if (idx_agent/num_agents <= 0.5):
             AgentList.append(Agent(**agent_quad_default.__dict__))
         else:
             AgentList.append(Agent(**agent_car_default.__dict__))
+
+        # AgentList.append(Agent(**agent_quad_default.__dict__))
         AgentList[idx_agent].agent_id = idx_agent
         AgentList[idx_agent].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
         AgentList[idx_agent].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
@@ -107,11 +110,11 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
         TaskList[idx_task].end_time = TaskList[idx_task].start_time + TaskList[idx_task].duration
 
     for n in range(0,num_tasks):
-        print("Task after")
+        print("Task " + str(n))
         print(str(TaskList[n].x)+", "+str(TaskList[n].y)+", "+str(TaskList[n].z))
         print(str(TaskList[n].start_time)+" - "+str(TaskList[n].end_time))
     for m in range(0,num_agents):
-        print("Agent after")
+        print("Agent " + str(n))
         print(str(AgentList[m].x)+", "+str(AgentList[m].y)+", "+str(AgentList[m].z))
 
 

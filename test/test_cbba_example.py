@@ -34,10 +34,17 @@ if __name__ == "__main__":
     # create a CBBA solver
     CBBA_solver = CBBA(config_data)
 
-    # solve
-    score_total = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth)
-    # the output is CBBA_solver.path_list
+    t_start = time.time()
 
+    # solve
+    path_list = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth)
+    
+    t_end = time.time()
+    t_used = t_end - t_start
+    print("Time used [sec]: ", t_used)
+
+
+    # the output is CBBA_solver.path_list
     print("bundle_list")
     print(CBBA_solver.bundle_list)
     print("path_list")
