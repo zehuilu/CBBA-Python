@@ -11,7 +11,7 @@ Require:
 Python >= 3.7
 
 This repo has been tested with:
-* Python 3.9.1, macOS 11.2.1
+* Python 3.9.1, macOS 11.2.1, numpy 1.20.1, matplotlib 3.3.4
 * python 3.8.5, Ubuntu 20.04.2 LTS, numpy 1.20.1, matplotlib 3.3.4
 
 
