@@ -1,9 +1,14 @@
 # CBBA-Python
-This is a Python implementation of CBBA.
+This is a Python implementation of CBBA (Consensus-Based Bundle Algorithm).
+
+You can see more details about CBBA from these papers.
+
+* [Choi, H.-L., Brunet, L., and How, J. P., “Consensus-Based Decentralized Auctions for Robust Task Allocation,” IEEE Transactions on Robotics, vol. 25, Aug. 2009, pp. 912–926.](https://ieeexplore.ieee.org/abstract/document/5072249?casa_token=zYvs9usD3FYAAAAA:jz0SmSso6T5l107pHGJgIQhVNP3S4NEnnIPi6sRC--8aealzVFinApRitUzhISlprmsPjcr3)
+
+* [Brunet, L., Choi, H.-L., and How, J. P., “Consensus-Based Auction Approaches for Decentralized Task Assignment,” AIAA Guidance, Navigation, and Control Conference (GNC), Honolulu, HI: 2008.](https://arc.aiaa.org/doi/abs/10.2514/6.2008-6839)
 
 Require:
 Python >= 3.7
-
 
 This repo has been tested with:
 * Python 3.9.1, macOS 11.2.1
@@ -12,8 +17,8 @@ This repo has been tested with:
 Dependencies
 ============
 For Python:
-* [numpy](https://numpy.org/).
-* [matplotlib](https://matplotlib.org/).
+* [numpy](https://numpy.org/)
+* [matplotlib](https://matplotlib.org/)
 
 ```
 $ pip3 install numpy matplotlib

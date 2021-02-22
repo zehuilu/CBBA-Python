@@ -22,7 +22,7 @@ if __name__ == "__main__":
     json_file = open(config_file_name)
     config_data = json.load(json_file)
 
-    # create a world
+    # create a world, each list is [min, max] coordinates for x,y,z axis
     WorldInfoTest = WorldInfo([-2.0,2.5], [-1.5,5.5], [0.0,20.0])
 
     # create a list of Agent(s) and Task(s)

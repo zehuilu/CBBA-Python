@@ -736,7 +736,7 @@ class CBBA(object):
                             [self.times_list[n][m], self.times_list[n][m]+Task_next.duration], linewidth=2, color=color_str)
                         Task_prev = Task(**Task_next.__dict__)
         
-        plt.title('Agent Paths with Time Windows')
+        plt.title('Agent Paths without Time Windows')
         ax_3d.set_xlabel("X")
         ax_3d.set_ylabel("Y")
         ax_3d.set_zlabel("Time")
