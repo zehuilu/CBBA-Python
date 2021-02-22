@@ -1,0 +1,28 @@
+{
+    "AGENT_TYPES": ["quad", "car"],
+    "TASK_TYPES": ["track", "rescue"],
+
+    "QUAD_DEFAULT": {
+        "NOM_VELOCITY": "2",
+        "FUEL": "1"
+    },
+
+    "CAR_DEFAULT": {
+        "NOM_VELOCITY": "2",
+        "FUEL": "1"
+    },
+    
+    "TRACK_DEFAULT": {
+        "TASK_VALUE": "100",
+        "START_TIME": "0",
+        "END_TIME": "100",
+        "DURATION": "0"
+    },
+
+    "RESCUE_DEFAULT": {
+        "TASK_VALUE": "100",
+        "START_TIME": "0",
+        "END_TIME": "100",
+        "DURATION": "0"
+    }
+}

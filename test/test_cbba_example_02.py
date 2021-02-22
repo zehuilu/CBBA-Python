@@ -17,7 +17,7 @@ import HelperLibrary as hp
 
 if __name__ == "__main__":
     # a json configuration file
-    config_file_name = "config_example.json"
+    config_file_name = "config_example_02.json"
     # Read the configuration from the json file
     json_file = open(config_file_name)
     config_data = json.load(json_file)
@@ -44,11 +44,13 @@ if __name__ == "__main__":
     print("Time used [sec]: ", t_used)
 
 
-    # the output is CBBA_solver.path_list
+    # the output is CBBA_solver.path_list or path_list
     print("bundle_list")
     print(CBBA_solver.bundle_list)
     print("path_list")
     print(CBBA_solver.path_list)
+    print("path_list")
+    print(path_list)
     print("times_list")
     print(CBBA_solver.times_list)
     print("winners_list")

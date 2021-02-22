@@ -105,7 +105,8 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
         TaskList[idx_task].task_id = idx_task
         TaskList[idx_task].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
         TaskList[idx_task].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
-        TaskList[idx_task].z = random.uniform(WorldInfoInput.limit_z[0], WorldInfoInput.limit_z[1])
+        # TaskList[idx_task].z = random.uniform(WorldInfoInput.limit_z[0], WorldInfoInput.limit_z[1])
+        TaskList[idx_task].z = 0
         TaskList[idx_task].start_time = random.uniform(0, 100)
         TaskList[idx_task].end_time = TaskList[idx_task].start_time + TaskList[idx_task].duration
 
