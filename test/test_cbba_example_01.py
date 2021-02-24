@@ -48,8 +48,6 @@ if __name__ == "__main__":
     print("bundle_list")
     print(CBBA_solver.bundle_list)
     print("path_list")
-    print(CBBA_solver.path_list)
-    print("path_list")
     print(path_list)
     print("times_list")
     print(CBBA_solver.times_list)

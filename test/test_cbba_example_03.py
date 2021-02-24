@@ -17,7 +17,7 @@ import HelperLibrary as hp
 
 if __name__ == "__main__":
     # a json configuration file
-    config_file_name = "config_example_02.json"
+    config_file_name = "config_example_03.json"
     # Read the configuration from the json file
     json_file = open(config_file_name)
     config_data = json.load(json_file)
@@ -27,9 +27,9 @@ if __name__ == "__main__":
 
     # create a list of Agent(s) and Task(s)
     num_agents = 5
-    num_tasks = 10
+    num_tasks = 20
     max_depth = num_tasks
-    AgentList, TaskList = hp.create_agents_and_tasks(num_agents, num_tasks, WorldInfoTest, config_data)
+    AgentList, TaskList = hp.create_agents_and_tasks_homogeneous(num_agents, num_tasks, WorldInfoTest, config_data)
 
     # create a CBBA solver
     CBBA_solver = CBBA(config_data)
@@ -55,6 +55,6 @@ if __name__ == "__main__":
     print(CBBA_solver.winners_list)
 
 
-    # plot
-    CBBA_solver.plot_assignment()
+    # plot without time window
+    CBBA_solver.plot_assignment_without_timewindow()
     

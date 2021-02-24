@@ -684,7 +684,7 @@ class CBBA(object):
 
     def plot_assignment(self):
         """
-        Plots CBBA outputs
+        Plots CBBA outputs when there is time window for tasks.
         """
 
         # 3D plot
@@ -736,7 +736,7 @@ class CBBA(object):
                             [self.times_list[n][m], self.times_list[n][m]+Task_next.duration], linewidth=2, color=color_str)
                         Task_prev = Task(**Task_next.__dict__)
         
-        plt.title('Agent Paths without Time Windows')
+        plt.title('Agent Paths with Time Windows')
         ax_3d.set_xlabel("X")
         ax_3d.set_ylabel("Y")
         ax_3d.set_zlabel("Time")
@@ -750,7 +750,7 @@ class CBBA(object):
         handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
         legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
 
-        self.set_axes_equal_xy(ax_3d)
+        self.set_axes_equal_xy(ax_3d, flag_3d=True)
 
 
         # # plot agent schedules
@@ -782,7 +782,7 @@ class CBBA(object):
         plt.show()
 
 
-    def set_axes_equal_xy(self, ax):
+    def set_axes_equal_xy(self, ax, flag_3d: bool):
         '''
         Make only x and y axes of 3D plot have equal scale. This is one possible solution to Matplotlib's
         ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
@@ -790,10 +790,11 @@ class CBBA(object):
 
         Input
         ax: a matplotlib axis, e.g., as output from plt.gca().
+        flag_3d: boolean, True if it's 3D plot.
         '''
 
-        x_limits = [self.space_limit_x[0]-0.2, self.space_limit_x[1]+0.2]
-        y_limits = [self.space_limit_y[0]-0.2, self.space_limit_y[1]+0.2]
+        x_limits = self.space_limit_x
+        y_limits = self.space_limit_y
 
         x_range = abs(x_limits[1] - x_limits[0])
         x_middle = np.mean(x_limits)
@@ -804,40 +805,14 @@ class CBBA(object):
         # norm, hence I call half the max range the plot radius.
         plot_radius = 0.5*max([x_range, y_range])
 
-        ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
-        ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
-        ax.set_zlim3d(self.time_interval_list)
-
-
-    def set_axes_equal_all(self, ax):
-        '''
-        Make axes of 3D plot have equal scale so that spheres appear as spheres,
-        cubes as cubes, etc..  This is one possible solution to Matplotlib's
-        ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
-        Reference: https://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to
-
-        Input
-        ax: a matplotlib axis, e.g., as output from plt.gca().
-        '''
-
-        x_limits = [self.space_limit_x[0]-0.2, self.space_limit_x[1]+0.2]
-        y_limits = [self.space_limit_y[0]-0.2, self.space_limit_y[1]+0.2]
-        z_limits = copy.deepcopy(self.time_interval_list)
-
-        x_range = abs(x_limits[1] - x_limits[0])
-        x_middle = np.mean(x_limits)
-        y_range = abs(y_limits[1] - y_limits[0])
-        y_middle = np.mean(y_limits)
-        z_range = abs(z_limits[1] - z_limits[0])
-        z_middle = np.mean(z_limits)
-
-        # The plot bounding box is a sphere in the sense of the infinity
-        # norm, hence I call half the max range the plot radius.
-        plot_radius = 0.5*max([x_range, y_range, z_range])
-
-        ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
-        ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
-        ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
+        if flag_3d:
+            ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+            ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+            if abs(self.time_interval_list[1]) >= 1e-3:
+                ax.set_zlim3d(self.time_interval_list)
+        else:
+            ax.set_xlim([x_middle - plot_radius, x_middle + plot_radius])
+            ax.set_ylim([y_middle - plot_radius, y_middle + plot_radius])
 
 
     def lookup_task(self, task_id: int):
@@ -855,3 +830,68 @@ class CBBA(object):
             raise Exception("Task " + str(task_id) + " not found!")
 
         return TaskOutput[0]
+
+
+    def plot_assignment_without_timewindow(self):
+        """
+        Plots CBBA outputs when there is no time window for tasks.
+        """
+
+        # 3D plot
+        fig = plt.figure(1)
+        ax = fig.add_subplot(111)
+        # offset to plot text in 3D space
+        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
+
+        # plot tasks
+        for m in range(0, self.num_tasks):
+            # track task is red
+            if self.TaskList[m].task_type == 0:
+                color_str = 'red'
+            # rescue task is blue
+            else:
+                color_str = 'blue'
+
+            ax.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, marker='x', color=color_str)
+            ax.plot([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, linestyle=':', color=color_str, linewidth=3)
+            ax.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, "T"+str(m))
+
+        # plot agents
+        for n in range(0, self.num_agents):
+            # quad agent is red
+            if self.AgentList[n].agent_type == 0:
+                color_str = 'red'
+            # car agent is blue
+            else:
+                color_str = 'blue'
+            ax.scatter(self.AgentList[n].x, self.AgentList[n].y, marker='o', color=color_str)
+            ax.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, "A"+str(n))
+
+            # check if the path has something in it
+            if (self.path_list[n][0] > -1):
+                Task_prev = self.lookup_task(self.path_list[n][0])
+                ax.plot([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], linewidth=2, color=color_str)
+                ax.plot([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], linewidth=2, color=color_str)
+
+                for m in range(1, len(self.path_list[n])):
+                    if (self.path_list[n][m] > -1):
+                        Task_next = self.lookup_task(self.path_list[n][m])
+                        ax.plot([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], linewidth=2, color=color_str)
+                        ax.plot([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], linewidth=2, color=color_str)
+                        Task_prev = Task(**Task_next.__dict__)
+        
+        plt.title('Agent Paths without Time Windows')
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+
+        # set legends
+        colors = ["red", "blue", "red", "blue"]
+        marker_list = ["o", "o", "x", "x"]
+        labels = ["Agent type 1", "Agent type 2", "Task type 1", "Task type 2"]
+        f = lambda m,c: plt.plot([],[],marker=m, color=c, ls="none")[0]
+        handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
+        legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
+
+        self.set_axes_equal_xy(ax, flag_3d=False)
+
+        plt.show()
