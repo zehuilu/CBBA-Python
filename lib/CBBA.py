@@ -28,7 +28,6 @@ class CBBA(object):
     space_limit_z: list # [min, max] z coordinate [meter]
     time_interval_list: list # time interval for all the agents and tasks
 
-    agent_id_list: list # 1D list
     agent_index_list: list # 1D list
     bundle_list: list # 2D list
     path_list: list # 2D list
@@ -63,7 +62,7 @@ class CBBA(object):
         self.time_interval_list = [ min(int(config_data["TRACK_DEFAULT"]["START_TIME"]), int(config_data["RESCUE_DEFAULT"]["START_TIME"])), \
             max(int(config_data["TRACK_DEFAULT"]["END_TIME"]), int(config_data["RESCUE_DEFAULT"]["END_TIME"])) ]
 
-        # Initialize Compatibility Matrix 
+        # Initialize Compatibility Matrix
         self.compatibility_mat = [ [0] * len(self.task_types) for _ in range(len(self.agent_types)) ]
 
         # FOR USER TO DO: Set agent-task pairs (which types of agents can do which types of tasks)
@@ -75,6 +74,44 @@ class CBBA(object):
             self.compatibility_mat[self.agent_types.index("car")][self.task_types.index("rescue")] = 1 # car for rescue
         except:
             pass
+
+
+    def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
+        """
+        Initialize some lists given new AgentList, TaskList, and WorldInfoInput.
+        """
+
+        self.num_agents = len(AgentList)
+        self.num_tasks = len(TaskList)
+        self.max_depth = max_depth
+
+        self.AgentList = AgentList
+        self.TaskList = TaskList
+
+        # world information
+        self.WorldInfo = WorldInfoInput
+        self.space_limit_x = self.WorldInfo.limit_x
+        self.space_limit_y = self.WorldInfo.limit_y
+        self.space_limit_z = self.WorldInfo.limit_z
+
+        # Fully connected graph
+        # 2D list
+        self.graph = np.logical_not(np.identity(self.num_agents)).tolist()
+
+        # initialize these properties
+        self.bundle_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+        self.path_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+        self.times_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+        self.scores_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
+
+        # fixed the initialization, from 0 vector to -1 vector
+        self.bid_list = [ [-1] * self.num_tasks for _ in range(self.num_agents) ]
+        self.winners_list = [ [-1] * self.num_tasks for _ in range(self.num_agents) ]
+        self.winner_bid_list = [ [-1] * self.num_tasks for _ in range(self.num_agents) ]
+
+        self.agent_index_list = []
+        for n in range(0, self.num_agents):
+            self.agent_index_list.append(self.AgentList[n].agent_id)
 
 
     def solve(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
@@ -148,48 +185,20 @@ class CBBA(object):
                     break
 
         # output the result path for each agent, delete all -1
-        path_list_output = [ list( filter(lambda a: a != -1, self.path_list[i]) ) \
+        self.path_list = [ list( filter(lambda a: a != -1, self.path_list[i]) ) \
             for i in range(len(self.path_list)) ]
 
-        return path_list_output
+        # delete redundant elements
+        self.bundle_list = [ list( filter(lambda a: a != -1, self.bundle_list[i]) ) \
+            for i in range(len(self.bundle_list)) ]
 
+        self.times_list = [ list( filter(lambda a: a != -1, self.times_list[i]) ) \
+            for i in range(len(self.times_list)) ]
 
-    def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
-        """
-        Initialize some lists given AgentList, TaskList, and WorldInfoInput.
-        """
+        self.scores_list = [ list( filter(lambda a: a != -1, self.scores_list[i]) ) \
+            for i in range(len(self.scores_list)) ]
 
-        self.num_agents = len(AgentList)
-        self.num_tasks = len(TaskList)
-        self.max_depth = max_depth
-
-        self.AgentList = AgentList
-        self.TaskList = TaskList
-
-        # world information
-        self.WorldInfo = WorldInfoInput
-        self.space_limit_x = self.WorldInfo.limit_x
-        self.space_limit_y = self.WorldInfo.limit_y
-        self.space_limit_z = self.WorldInfo.limit_z
-
-        # Fully connected graph
-        # 2D list
-        self.graph = np.logical_not(np.identity(self.num_agents)).tolist()
-
-        # initialize these properties
-        self.bundle_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
-        self.path_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
-        self.times_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
-        self.scores_list = [ [-1] * self.max_depth for _ in range(self.num_agents) ]
-        self.bid_list = [ [0] * self.num_tasks for _ in range(self.num_agents) ]
-        self.winners_list = [ [0] * self.num_tasks for _ in range(self.num_agents) ]
-        self.winner_bid_list = [ [0] * self.num_tasks for _ in range(self.num_agents) ]
-
-        self.agent_id_list = []
-        self.agent_index_list = []
-        for n in range(0, self.num_agents):
-            self.agent_id_list.append(self.AgentList[n].agent_id)
-            self.agent_index_list.append(n)
+        return self.path_list
 
 
     def bundle(self, idx_agent: int):
@@ -226,8 +235,8 @@ class CBBA(object):
                     # The agent has lost a previous task, release this one too
                     if (self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] == self.agent_index_list[idx_agent]):
                         # Remove from winner list if in there
-                        self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] = 0
-                        self.winner_bid_list[idx_agent][self.bundle_list[idx_agent][idx]] = 0
+                        self.winners_list[idx_agent][self.bundle_list[idx_agent][idx]] = -1
+                        self.winner_bid_list[idx_agent][self.bundle_list[idx_agent][idx]] = -1
 
                     # Clear from path and times vectors and remove from bundle
                     path_current = copy.deepcopy(self.path_list[idx_agent])
@@ -273,6 +282,7 @@ class CBBA(object):
 
             # Determine which assignments are available. D1, D2, D3 are all numpy 1D bool array
             D1 = ( ( np.array(self.bid_list[idx_agent]) - np.array(self.winner_bid_list[idx_agent]) ) > epsilon )
+            # find the equal items
             D2 = ( abs(np.array(self.bid_list[idx_agent]) - np.array(self.winner_bid_list[idx_agent])) <= epsilon )
             # Tie-break based on agent index
             D3 = ( self.agent_index_list[idx_agent] < np.array(self.winners_list[idx_agent]) )
@@ -365,8 +375,7 @@ class CBBA(object):
 
         for k in range(0, self.num_agents):
             for i in range(0, self.num_agents):
-                # if (self.grapg[k][i] == 1)
-                if ( abs(self.graph[k][i]-1) <= 1e-3 ):
+                if (self.graph[k][i] == 1):
                     for j in range(0, self.num_tasks):
                         # Implement table for each task
 
@@ -389,7 +398,7 @@ class CBBA(object):
                                 y[i][j] = old_y[k][j]
                     
                             # Entry 3: Update or Leave
-                            elif ( z[i][j] > 0 ):
+                            elif ( z[i][j] > -1 ):
                                 if ( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ): # Update
                                     z[i][j] = old_z[k][j]
                                     y[i][j] = old_y[k][j]
@@ -402,7 +411,7 @@ class CBBA(object):
                                         y[i][j] = old_y[k][j]
 
                             # Entry 4: Update
-                            elif ( z[i][j] == 0 ):
+                            elif ( z[i][j] == -1 ):
                                 z[i][j] = old_z[k][j]
                                 y[i][j] = old_y[k][j]
 
@@ -421,17 +430,17 @@ class CBBA(object):
                                 
                             # Entry 6: Reset
                             elif ( z[i][j] == k ) :
-                                z[i][j] = 0
-                                y[i][j] = 0
+                                z[i][j] = -1
+                                y[i][j] = -1
 
                             # Entry 7: Reset or Leave
-                            elif ( z[i][j] > 0 ):
+                            elif ( z[i][j] > -1 ):
                                 if( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ): # Reset
-                                    z[i][j] = 0
-                                    y[i][j] = 0
+                                    z[i][j] = -1
+                                    y[i][j] = -1
                                 
                             # Entry 8: Leave
-                            elif ( z[i][j] == 0 ):
+                            elif ( z[i][j] == -1 ):
                                 # Do nothing
                                 pass
 
@@ -441,8 +450,8 @@ class CBBA(object):
 
 
                         # Entries 9 to 13: Sender thinks someone else has the task
-                        elif ( old_z[k][j] > 0 ):
-                 
+                        elif ( old_z[k][j] > -1 ):
+                            
                             # Entry 9: Update or Leave
                             if ( z[i][j] == i ):
                                 if ( time_mat[k][old_z[k][j]] > time_mat_new[i][old_z[k][j]] ):
@@ -460,8 +469,8 @@ class CBBA(object):
                                     z[i][j] = old_z[k][j]
                                     y[i][j] = old_y[k][j]
                                 else: # Reset
-                                    z[i][j] = 0
-                                    y[i][j] = 0
+                                    z[i][j] = -1
+                                    y[i][j] = -1
 
                             # Entry 11: Update or Leave
                             elif ( z[i][j] == old_z[k][j] ):
@@ -470,14 +479,14 @@ class CBBA(object):
                                     y[i][j] = old_y[k][j]
 
                             # Entry 12: Update, Reset or Leave
-                            elif ( z[i][j] > 0 ):
+                            elif ( z[i][j] > -1 ):
                                 if ( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ):
                                     if ( time_mat[k][old_z[k][j]] >= time_mat_new[i][old_z[k][j]] ): # Update
                                         z[i][j] = old_z[k][j]
                                         y[i][j] = old_y[k][j]
                                     elif ( time_mat[k][old_z[k][j]] < time_mat_new[i][old_z[k][j]] ): # Reset
-                                        z[i][j] = 0
-                                        y[i][j] = 0
+                                        z[i][j] = -1
+                                        y[i][j] = -1
                                     else:
                                         raise Exception("Unknown condition for Entry 12: please revise!")
                                 else:
@@ -491,7 +500,7 @@ class CBBA(object):
                                                 y[i][j] = old_y[k][j]
 
                             # Entry 13: Update or Leave
-                            elif ( z[i][j] == 0 ):
+                            elif ( z[i][j] == -1 ):
                                 if ( time_mat[k][old_z[k][j]] > time_mat_new[i][old_z[k][j]] ): # Update
                                     z[i][j] = old_z[k][j]
                                     y[i][j] = old_y[k][j]
@@ -501,7 +510,7 @@ class CBBA(object):
 
 
                         # Entries 14 to 17: Sender thinks no one has the task
-                        elif ( old_z[k][j] == 0 ):
+                        elif ( old_z[k][j] == -1 ):
 
                             # Entry 14: Leave
                             if ( z[i][j] == i ):
@@ -514,13 +523,13 @@ class CBBA(object):
                                 y[i][j] = old_y[k][j]
 
                             # Entry 16: Update or Leave
-                            elif ( z[i][j] > 0 ):
+                            elif ( z[i][j] > -1 ):
                                 if ( time_mat[k][z[i][j]] > time_mat_new[i][z[i][j]] ): # Update
                                     z[i][j] = old_z[k][j]
                                     y[i][j] = old_y[k][j]
 
                             # Entry 17: Leave
-                            elif ( z[i][j] == 0 ):
+                            elif ( z[i][j] == -1 ):
                                 # Do nothing
                                 pass
                             else:
@@ -559,8 +568,9 @@ class CBBA(object):
             return best_indices, task_times, feasibility
 
         # Reset bids, best positions in path, and best times
-        best_indices = [0] * self.num_tasks
-        task_times = [0] * self.num_tasks
+        self.bid_list[idx_agent] = [-1] * self.num_tasks
+        best_indices = [-1] * self.num_tasks
+        task_times = [-2] * self.num_tasks
 
         # For each task
         for idx_task in range(0, self.num_tasks):
@@ -574,8 +584,8 @@ class CBBA(object):
                     # this task not in my bundle yet
                     # Find the best score attainable by inserting the score into the current path
                     best_bid   = 0
-                    best_index = 0
-                    best_time  = -1
+                    best_index = -1
+                    best_time  = -2
 
                     # Try inserting task m in location j among other tasks and see if it generates a better new_path.
                     for j in range(0, L[0]+1):
@@ -719,8 +729,8 @@ class CBBA(object):
             ax_3d.scatter(self.AgentList[n].x, self.AgentList[n].y, 0, marker='o', color=color_str)
             ax_3d.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, 0.1, "A"+str(n))
 
-            # check if the path has something in it
-            if (self.path_list[n][0] > -1):
+            # if the path is not empty
+            if (len(self.path_list[n]) > 0.5):
                 Task_prev = self.lookup_task(self.path_list[n][0])
                 ax_3d.plot3D([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], \
                     [0, self.times_list[n][0]], linewidth=2, color=color_str)
@@ -782,6 +792,71 @@ class CBBA(object):
         plt.show()
 
 
+    def plot_assignment_without_timewindow(self):
+        """
+        Plots CBBA outputs when there is no time window for tasks.
+        """
+
+        # 3D plot
+        fig = plt.figure(1)
+        ax = fig.add_subplot(111)
+        # offset to plot text in 3D space
+        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
+
+        # plot tasks
+        for m in range(0, self.num_tasks):
+            # track task is red
+            if self.TaskList[m].task_type == 0:
+                color_str = 'red'
+            # rescue task is blue
+            else:
+                color_str = 'blue'
+
+            ax.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, marker='x', color=color_str)
+            ax.plot([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, linestyle=':', color=color_str, linewidth=3)
+            ax.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, "T"+str(m))
+
+        # plot agents
+        for n in range(0, self.num_agents):
+            # quad agent is red
+            if self.AgentList[n].agent_type == 0:
+                color_str = 'red'
+            # car agent is blue
+            else:
+                color_str = 'blue'
+            ax.scatter(self.AgentList[n].x, self.AgentList[n].y, marker='o', color=color_str)
+            ax.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, "A"+str(n))
+
+            # if the path is not empty
+            if (len(self.path_list[n]) > 0.5):
+                Task_prev = self.lookup_task(self.path_list[n][0])
+                ax.plot([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], linewidth=2, color=color_str)
+                ax.plot([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], linewidth=2, color=color_str)
+
+                for m in range(1, len(self.path_list[n])):
+                    if (self.path_list[n][m] > -1):
+                        Task_next = self.lookup_task(self.path_list[n][m])
+                        ax.plot([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], linewidth=2, color=color_str)
+                        ax.plot([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], linewidth=2, color=color_str)
+                        Task_prev = Task(**Task_next.__dict__)
+        
+        plt.title('Agent Paths without Time Windows')
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+
+        # set legends
+        colors = ["red", "blue", "red", "blue"]
+        marker_list = ["o", "o", "x", "x"]
+        labels = ["Agent type 1", "Agent type 2", "Task type 1", "Task type 2"]
+        f = lambda m,c: plt.plot([],[],marker=m, color=c, ls="none")[0]
+        handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
+        legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
+
+        self.set_axes_equal_xy(ax, flag_3d=False)
+
+        plt.show()
+
+
     def set_axes_equal_xy(self, ax, flag_3d: bool):
         '''
         Make only x and y axes of 3D plot have equal scale. This is one possible solution to Matplotlib's
@@ -830,68 +905,3 @@ class CBBA(object):
             raise Exception("Task " + str(task_id) + " not found!")
 
         return TaskOutput[0]
-
-
-    def plot_assignment_without_timewindow(self):
-        """
-        Plots CBBA outputs when there is no time window for tasks.
-        """
-
-        # 3D plot
-        fig = plt.figure(1)
-        ax = fig.add_subplot(111)
-        # offset to plot text in 3D space
-        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
-
-        # plot tasks
-        for m in range(0, self.num_tasks):
-            # track task is red
-            if self.TaskList[m].task_type == 0:
-                color_str = 'red'
-            # rescue task is blue
-            else:
-                color_str = 'blue'
-
-            ax.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, marker='x', color=color_str)
-            ax.plot([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, linestyle=':', color=color_str, linewidth=3)
-            ax.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, "T"+str(m))
-
-        # plot agents
-        for n in range(0, self.num_agents):
-            # quad agent is red
-            if self.AgentList[n].agent_type == 0:
-                color_str = 'red'
-            # car agent is blue
-            else:
-                color_str = 'blue'
-            ax.scatter(self.AgentList[n].x, self.AgentList[n].y, marker='o', color=color_str)
-            ax.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, "A"+str(n))
-
-            # check if the path has something in it
-            if (self.path_list[n][0] > -1):
-                Task_prev = self.lookup_task(self.path_list[n][0])
-                ax.plot([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], linewidth=2, color=color_str)
-                ax.plot([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], linewidth=2, color=color_str)
-
-                for m in range(1, len(self.path_list[n])):
-                    if (self.path_list[n][m] > -1):
-                        Task_next = self.lookup_task(self.path_list[n][m])
-                        ax.plot([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], linewidth=2, color=color_str)
-                        ax.plot([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], linewidth=2, color=color_str)
-                        Task_prev = Task(**Task_next.__dict__)
-        
-        plt.title('Agent Paths without Time Windows')
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-
-        # set legends
-        colors = ["red", "blue", "red", "blue"]
-        marker_list = ["o", "o", "x", "x"]
-        labels = ["Agent type 1", "Agent type 2", "Task type 1", "Task type 2"]
-        f = lambda m,c: plt.plot([],[],marker=m, color=c, ls="none")[0]
-        handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
-        legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
-
-        self.set_axes_equal_xy(ax, flag_3d=False)
-
-        plt.show()

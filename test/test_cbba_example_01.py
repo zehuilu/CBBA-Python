@@ -53,6 +53,13 @@ if __name__ == "__main__":
     print(CBBA_solver.times_list)
     print("winners_list")
     print(CBBA_solver.winners_list)
+    print("scores_list")
+    print(CBBA_solver.scores_list)
+
+    print("bid_list")
+    print(CBBA_solver.bid_list)
+    print("winner_bid_list")
+    print(CBBA_solver.winner_bid_list)
 
 
     # plot

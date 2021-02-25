@@ -51,14 +51,14 @@ Another example with task time window (but the task duration is zero) is `test/t
 $ cd <MAIN_DIRECTORY>
 $ python3 test/test_cbba_example_02.py
 ```
-The result visualization is shown below.
+The task assignment for each agent is stored as a 2D list `path_list` (the return variable of `CBBA.solve()`). The result visualization is shown below.
 ![A simple example with task time window 2](/doc/2.png)
 
 
-An example without task time window is `test/test_cbba_example_03.py`.
+<!-- An example without task time window is `test/test_cbba_example_03.py`.
 ```
 $ cd <MAIN_DIRECTORY>
 $ python3 test/test_cbba_example_03.py
 ```
 The result visualization is shown below.
-![A simple example without task time window](/doc/3.png)
+![A simple example without task time window](/doc/3.png) -->

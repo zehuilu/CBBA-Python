@@ -54,6 +54,11 @@ if __name__ == "__main__":
     print("winners_list")
     print(CBBA_solver.winners_list)
 
+    print("bid_list")
+    print(CBBA_solver.bid_list)
+    print("winner_bid_list")
+    print(CBBA_solver.winner_bid_list)
+
 
     # plot without time window
     CBBA_solver.plot_assignment_without_timewindow()

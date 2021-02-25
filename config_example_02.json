@@ -4,12 +4,12 @@
 
     "QUAD_DEFAULT": {
         "NOM_VELOCITY": "1",
-        "FUEL": "2"
+        "FUEL": "3"
     },
 
     "CAR_DEFAULT": {
         "NOM_VELOCITY": "1",
-        "FUEL": "2"
+        "FUEL": "3"
     },
     
     "TRACK_DEFAULT": {
