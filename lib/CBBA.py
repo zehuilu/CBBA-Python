@@ -21,6 +21,8 @@ class CBBA(object):
     num_agents: int # number of agents
     num_tasks: int # number of tasks
     max_depth: int # maximum bundle depth
+    time_window_flag: bool # True if time window exists
+    duration_flag: bool # Ture when all task duration > 0
     agent_types: list
     task_types: list
     space_limit_x: list # [min, max] x coordinate [meter]
@@ -61,6 +63,8 @@ class CBBA(object):
         # time interval for all the agents and tasks
         self.time_interval_list = [ min(int(config_data["TRACK_DEFAULT"]["START_TIME"]), int(config_data["RESCUE_DEFAULT"]["START_TIME"])), \
             max(int(config_data["TRACK_DEFAULT"]["END_TIME"]), int(config_data["RESCUE_DEFAULT"]["END_TIME"])) ]
+        # Ture when all task duration > 0
+        self.duration_flag = (min(int(config_data["TRACK_DEFAULT"]["DURATION"]), int(config_data["RESCUE_DEFAULT"]["DURATION"])) > 0)
 
         # Initialize Compatibility Matrix
         self.compatibility_mat = [ [0] * len(self.task_types) for _ in range(len(self.agent_types)) ]
@@ -76,7 +80,7 @@ class CBBA(object):
             pass
 
 
-    def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
+    def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int, time_window_flag: bool):
         """
         Initialize some lists given new AgentList, TaskList, and WorldInfoInput.
         """
@@ -84,6 +88,7 @@ class CBBA(object):
         self.num_agents = len(AgentList)
         self.num_tasks = len(TaskList)
         self.max_depth = max_depth
+        self.time_window_flag = time_window_flag
 
         self.AgentList = AgentList
         self.TaskList = TaskList
@@ -114,13 +119,13 @@ class CBBA(object):
             self.agent_index_list.append(self.AgentList[n].agent_id)
 
 
-    def solve(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int):
+    def solve(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo, max_depth: int, time_window_flag: bool):
         """
         Main CBBA Function
         """
 
         # Initialize some lists given AgentList, TaskList, and WorldInfoInput.
-        self.settings(AgentList, TaskList, WorldInfoInput, max_depth)
+        self.settings(AgentList, TaskList, WorldInfoInput, max_depth, time_window_flag)
 
 
         # Initialize working variables
@@ -759,35 +764,46 @@ class CBBA(object):
         f = lambda m,c: plt.plot([],[],marker=m, color=c, ls="none")[0]
         handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
         legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
-
         self.set_axes_equal_xy(ax_3d, flag_3d=True)
 
 
-        # # plot agent schedules
-        # fig_schdule = plt.figure(2)
-        # fig_schdule.suptitle("Schedules for Agents")
-        # for idx_agent in range(0, self.num_agents):
-        #     ax = plt.subplot(self.num_agents, 1, idx_agent+1)
-        #     ax.set_title("Agent "+str(idx_agent))
-        #     ax.set_xlabel("Time [sec]")
-        #     ax.set_ylim([0.95, 1.05])
+        if self.duration_flag:
+            # plot agent schedules
+            fig_schdule = plt.figure(2)
+            fig_schdule.suptitle("Schedules for Agents")
+            for idx_agent in range(0, self.num_agents):
+                ax = plt.subplot(self.num_agents, 1, idx_agent+1)
+                ax.set_title("Agent "+str(idx_agent))
+                if idx_agent == (self.num_agents - 1):
+                    ax.set_xlabel("Time [sec]")
+                ax.set_xlim(self.time_interval_list)
+                ax.set_ylim([0.95, 1.05])
 
-        #     # quad agent is red
-        #     if self.AgentList[idx_agent].agent_type == 0:
-        #         color_str = 'red'
-        #     # car agent is blue
-        #     else:
-        #         color_str = 'blue'
+                # quad agent is red
+                if self.AgentList[idx_agent].agent_type == 0:
+                    color_str = 'red'
+                # car agent is blue
+                else:
+                    color_str = 'blue'
 
-        #     for idx_path in range (0, len(self.path_list[idx_agent])):
-        #         if (self.path_list[idx_agent][idx_path] > -1):
-        #             task_current = self.lookup_task(self.path_list[idx_agent][idx_path])
-        #             ax.plot([self.times_list[idx_agent][idx_path], \
-        #                 self.times_list[idx_agent][idx_path]+task_current.duration], [1,1], \
-        #                 linestyle='-', linewidth=10, color=color_str)
-        #             ax.plot([task_current.start_time, task_current.end_time], [1,1], linestyle='--', \
-        #                 color=color_str)
+                if len(self.path_list[idx_agent]) > 0 :
+                    for idx_path in range (0, len(self.path_list[idx_agent])):
+                        if (self.path_list[idx_agent][idx_path] > -1):
+                            task_current = self.lookup_task(self.path_list[idx_agent][idx_path])
+                            ax.plot([self.times_list[idx_agent][idx_path], \
+                                self.times_list[idx_agent][idx_path]+task_current.duration], [1,1], \
+                                linestyle='-', linewidth=10, color=color_str, alpha=0.5)
+                            ax.plot([task_current.start_time, task_current.end_time], [1,1], linestyle='-.', \
+                                linewidth=2, color=color_str)
 
+            # set legends
+            colors = ["red", "red"]
+            linestyles = ["-", "-."]
+            linewidth_list = [10, 2]
+            labels = ["Assignment Time", "Task Time"]
+            f = lambda l,c,w: plt.plot([],[], linestyle=l, color=c, linewidth=w)[0]
+            handles = [f(linestyles[i], colors[i], linewidth_list[i]) for i in range(len(labels))]
+            legend = fig_schdule.legend(handles, labels, loc='upper left', framealpha=1)
 
         plt.show()
 

@@ -43,7 +43,8 @@ $ cd <MAIN_DIRECTORY>
 $ python3 test/test_cbba_example_01.py
 ```
 The task assignment for each agent is stored as a 2D list `path_list` (the return variable of `CBBA.solve()`). The result visualization is shown below.
-![A simple example with task time window](/doc/1.png)
+![A simple example with task time window a](/doc/1_a.png)
+![A simple example with task time window b](/doc/1_b.png)
 
 
 Another example with task time window (but the task duration is zero) is `test/test_cbba_example_02.py`.

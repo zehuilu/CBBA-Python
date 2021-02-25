@@ -37,7 +37,7 @@ if __name__ == "__main__":
     t_start = time.time()
 
     # solve
-    path_list = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth)
+    path_list = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth, time_window_flag=True)
     
     t_end = time.time()
     t_used = t_end - t_start
