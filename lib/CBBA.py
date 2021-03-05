@@ -805,7 +805,7 @@ class CBBA(object):
             handles = [f(linestyles[i], colors[i], linewidth_list[i]) for i in range(len(labels))]
             legend = fig_schdule.legend(handles, labels, loc='upper left', framealpha=1)
 
-        plt.show()
+        plt.show(block=False)
 
 
     def plot_assignment_without_timewindow(self):
@@ -817,7 +817,7 @@ class CBBA(object):
         fig = plt.figure(1)
         ax = fig.add_subplot(111)
         # offset to plot text in 3D space
-        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
+        offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 100
 
         # plot tasks
         for m in range(0, self.num_tasks):
@@ -827,9 +827,7 @@ class CBBA(object):
             # rescue task is blue
             else:
                 color_str = 'blue'
-
-            ax.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, marker='x', color=color_str)
-            ax.plot([self.TaskList[m].x]*2, [self.TaskList[m].y]*2, linestyle=':', color=color_str, linewidth=3)
+            ax.scatter(self.TaskList[m].x, self.TaskList[m].y, marker='x', color=color_str)
             ax.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, "T"+str(m))
 
         # plot agents
@@ -847,13 +845,10 @@ class CBBA(object):
             if (len(self.path_list[n]) > 0.5):
                 Task_prev = self.lookup_task(self.path_list[n][0])
                 ax.plot([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y], linewidth=2, color=color_str)
-                ax.plot([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y], linewidth=2, color=color_str)
-
                 for m in range(1, len(self.path_list[n])):
                     if (self.path_list[n][m] > -1):
                         Task_next = self.lookup_task(self.path_list[n][m])
                         ax.plot([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y], linewidth=2, color=color_str)
-                        ax.plot([Task_next.x, Task_next.x], [Task_next.y, Task_next.y], linewidth=2, color=color_str)
                         Task_prev = Task(**Task_next.__dict__)
         
         plt.title('Agent Paths without Time Windows')
@@ -869,8 +864,7 @@ class CBBA(object):
         legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
 
         self.set_axes_equal_xy(ax, flag_3d=False)
-
-        plt.show()
+        plt.show(block=False)
 
 
     def set_axes_equal_xy(self, ax, flag_3d: bool):

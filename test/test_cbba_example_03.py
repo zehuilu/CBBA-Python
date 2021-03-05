@@ -7,6 +7,7 @@ import json
 import random
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 from dataclasses import dataclass, field
 from CBBA import CBBA
 from Agent import Agent
@@ -62,4 +63,5 @@ if __name__ == "__main__":
 
     # plot without time window
     CBBA_solver.plot_assignment_without_timewindow()
+    plt.show()
     
