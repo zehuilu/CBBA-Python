@@ -703,7 +703,7 @@ class CBBA(object):
         """
 
         # 3D plot
-        fig_3d = plt.figure(1)
+        fig_3d = plt.figure()
         ax_3d = fig_3d.add_subplot(111, projection='3d')
         # offset to plot text in 3D space
         offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
@@ -814,7 +814,7 @@ class CBBA(object):
         """
 
         # 3D plot
-        fig = plt.figure(1)
+        fig = plt.figure()
         ax = fig.add_subplot(111)
         # offset to plot text in 3D space
         offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 100
