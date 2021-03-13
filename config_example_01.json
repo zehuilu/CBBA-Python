@@ -3,26 +3,26 @@
     "TASK_TYPES": ["track", "rescue"],
 
     "QUAD_DEFAULT": {
-        "NOM_VELOCITY": "2",
-        "FUEL": "3"
+        "NOM_VELOCITY": 2,
+        "FUEL": 3
     },
 
     "CAR_DEFAULT": {
-        "NOM_VELOCITY": "2",
-        "FUEL": "3"
+        "NOM_VELOCITY": 2,
+        "FUEL": 3
     },
     
     "TRACK_DEFAULT": {
-        "TASK_VALUE": "100",
-        "START_TIME": "0",
-        "END_TIME": "150",
-        "DURATION": "15"
+        "TASK_VALUE": 100,
+        "START_TIME": 0,
+        "END_TIME": 150,
+        "DURATION": 15
     },
 
     "RESCUE_DEFAULT": {
-        "TASK_VALUE": "100",
-        "START_TIME": "0",
-        "END_TIME": "150",
-        "DURATION": "5"
+        "TASK_VALUE": 100,
+        "START_TIME": 0,
+        "END_TIME": 150,
+        "DURATION": 5
     }
 }

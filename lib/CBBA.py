@@ -203,7 +203,7 @@ class CBBA(object):
         self.scores_list = [ list( filter(lambda a: a != -1, self.scores_list[i]) ) \
             for i in range(len(self.scores_list)) ]
 
-        return self.path_list
+        return self.path_list, self.times_list
 
 
     def bundle(self, idx_agent: int):

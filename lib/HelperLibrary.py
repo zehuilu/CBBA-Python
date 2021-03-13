@@ -197,7 +197,9 @@ def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldIn
 
 def remove_from_list(self, list_input: list, index: int):
     """
-    Remove item from list at location specified by index, then append -1 at the end
+    Remove item from list at location specified by index, then append -1 at the end.
+    An exact implementation of remove_from_list in CBBA MATLAB version: http://acl.mit.edu/projects/consensus-based-bundle-algorithm
+    But it's not used in this repository due to the inefficiency.
 
     Example:
         list_input = [0, 1, 2, 3, 4]
@@ -215,7 +217,9 @@ def remove_from_list(self, list_input: list, index: int):
 
 def insert_in_list(self, list_input: list, value: float, index: int):
     """
-    Insert value into list at location specified by index, and delete the last one of original list
+    Insert value into list at location specified by index, and delete the last one of original list.
+    An exact implementation of insert_in_list in CBBA MATLAB version: http://acl.mit.edu/projects/consensus-based-bundle-algorithm
+    But it's not used in this repository due to the inefficiency.
 
     Example:
         list_input = [0, 1, 2, 3, 4]
