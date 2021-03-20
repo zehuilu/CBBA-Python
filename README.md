@@ -30,14 +30,14 @@ Usage
 =====
 
 The parameters for Tasks and Agents are written in a configuration json file.
-* ["AGENT_TYPES"]: agent type.
-* ["TASK_TYPES"]: task type. The i-th task type is associated with the i-th agent type.
-* ["AGENT_DEFAULT"]["NOM_VELOCITY"]: the average speed of agent [m/s].
-* ["AGENT_DEFAULT"]["FUEL"]: the traveling penalty/cost of agent.
-* ["TASK_DEFAULT"]["TASK_VALUE"]: the value/reward of task. With larger value, the task is more important than others.
-* ["TASK_DEFAULT"]["START_TIME"]: the starting timestamp of task [sec].
-* ["TASK_DEFAULT"]["END_TIME"]: the enging timestamp of task [sec].
-* ["TASK_DEFAULT"]["DURATION"]: the duration/time window of task [sec]. An agent needs to arrives at a task before the starting time and stays there until the ending time to be counted as complete a task.
+* `AGENT_TYPES`: agent type.
+* `TASK_TYPES`: task type. The i-th task type is associated with the i-th agent type.
+* `NOM_VELOCITY`: the average speed of agent [m/s].
+* `FUEL`: the traveling penalty/cost of agent.
+* `TASK_VALUE`: the value/reward of task. With larger value, the task is more important than others.
+* `START_TIME`: the starting timestamp of task [sec].
+* `END_TIME`: the enging timestamp of task [sec].
+* `DURATION`: the duration/time window of task [sec]. An agent needs to arrives at a task before the starting time and stays there until the ending time to be counted as complete a task.
 
 An example `config_example_01.json`:
 ```json
