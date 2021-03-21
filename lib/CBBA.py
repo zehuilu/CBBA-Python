@@ -248,11 +248,11 @@ class CBBA(object):
                     idx_remove = path_current.index(self.bundle_list[idx_agent][idx])
 
                     del self.path_list[idx_agent][idx_remove]
-                    self.path_list[idx_agent] = self.path_list[idx_agent].append(-1)
+                    self.path_list[idx_agent].append(-1)
                     del self.times_list[idx_agent][idx_remove]
-                    self.times_list[idx_agent] = self.times_list[idx_agent].append(-1)
+                    self.times_list[idx_agent].append(-1)
                     del self.scores_list[idx_agent][idx_remove]
-                    self.scores_list[idx_agent] = self.scores_list[idx_agent].append(-1)
+                    self.scores_list[idx_agent].append(-1)
 
                     # alternative way
                     # self.path_list[idx_agent] = hp.remove_from_list(self.path_list[idx_agent], idx_remove)
