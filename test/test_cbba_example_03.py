@@ -37,29 +37,18 @@ if __name__ == "__main__":
 
     t_start = time.time()
 
-    # solve
-    path_list, times_list = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth, time_window_flag=True)
+    # solve, no time window
+    path_list, _ = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth, time_window_flag=False)
     
     t_end = time.time()
     t_used = t_end - t_start
     print("Time used [sec]: ", t_used)
-
 
     # the output is CBBA_solver.path_list or path_list
     print("bundle_list")
     print(CBBA_solver.bundle_list)
     print("path_list")
     print(path_list)
-    print("times_list")
-    print(times_list)
-    print("winners_list")
-    print(CBBA_solver.winners_list)
-
-    print("bid_list")
-    print(CBBA_solver.bid_list)
-    print("winner_bid_list")
-    print(CBBA_solver.winner_bid_list)
-
 
     # plot without time window
     CBBA_solver.plot_assignment_without_timewindow()

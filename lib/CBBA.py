@@ -623,18 +623,28 @@ class CBBA(object):
                             [score, min_start, max_start] = self.scoring_compute_score\
                                 (idx_agent, Task(**Task_temp.__dict__), task_prev, time_prev, task_next, time_next)
 
-                            if (min_start > max_start):
-                                # Infeasible path
-                                skip_flag = True
-                                feasibility[idx_task][j] = 0
+                            if self.time_window_flag:
+                                # if tasks have time window
+                                if (min_start > max_start):
+                                    # Infeasible path
+                                    skip_flag = True
+                                    feasibility[idx_task][j] = 0
 
-                            if not skip_flag:
+                                if not skip_flag:
+                                    # Save the best score and task position
+                                    if (score > best_bid):
+                                        best_bid = score
+                                        best_index = j
+                                        # Select min start time as optimal
+                                        best_time = min_start
+                            else:
+                                # no time window for tasks
                                 # Save the best score and task position
                                 if (score > best_bid):
                                     best_bid = score
                                     best_index = j
                                     # Select min start time as optimal
-                                    best_time = min_start
+                                    best_time = 0.0
 
                     # save best bid information
                     if (best_bid > 0):
@@ -670,6 +680,7 @@ class CBBA(object):
 
             if (task_next == []):
                 # Last task in path
+                dt = 0.0
                 max_start = task_current.end_time
             else:
                 # Not last task, check if we can still make promised task
@@ -679,22 +690,26 @@ class CBBA(object):
                 max_start = min(task_current.end_time, time_next - task_current.duration - dt)
 
             # Compute score
-            reward = task_current.task_value * math.exp((-task_current.discount) * (min_start-task_current.start_time))
+            if self.time_window_flag:
+                # if tasks have time window
+                reward = task_current.task_value * math.exp((-task_current.discount) * (min_start-task_current.start_time))
+            else:
+                # no time window for tasks
+                # reward = task_current.task_value
+                reward = task_current.task_value * math.exp((-task_current.discount) * dt)
 
-            # Subtract fuel cost. Implement constant fuel to ensure DMG.
-            # NOTE: This is a fake score since it double counts fuel. Should
-            # not be used when comparing to optimal score. Need to compute
-            # real score of CBBA paths once CBBA algorithm has finished running.
+            # Subtract fuel cost. Implement constant fuel to ensure DMG (diminishing marginal gain).
+            # NOTE: This is a fake score since it double counts fuel. Should not be used when comparing to optimal score.
+            # Need to compute real score of CBBA paths once CBBA algorithm has finished running.
             penalty = self.AgentList[idx_agent].fuel * math.sqrt((self.AgentList[idx_agent].x-task_current.x)**2 + \
                 (self.AgentList[idx_agent].y-task_current.y)**2 + (self.AgentList[idx_agent].z-task_current.z)**2)
 
             score = reward - penalty
 
+        else:
             # FOR USER TO DO:  Define score function for specialized agents, for example:
             # elseif(agent.type == CBBA_Params.AGENT_TYPES.NEW_AGENT), ...  
             # Need to define score, minStart and maxStart
-
-        else:
             raise Exception("Unknown agent type!")
 
         return score, min_start, max_start
@@ -766,7 +781,7 @@ class CBBA(object):
         labels = ["Agent type 1", "Agent type 2", "Task type 1", "Task type 2"]
         f = lambda m,c: plt.plot([],[],marker=m, color=c, ls="none")[0]
         handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
-        legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
+        legend = plt.legend(handles, labels, bbox_to_anchor=(1, 1), loc='upper left', framealpha=1)
         self.set_axes_equal_xy(ax_3d, flag_3d=True)
 
 
@@ -806,7 +821,7 @@ class CBBA(object):
             labels = ["Assignment Time", "Task Time"]
             f = lambda l,c,w: plt.plot([],[], linestyle=l, color=c, linewidth=w)[0]
             handles = [f(linestyles[i], colors[i], linewidth_list[i]) for i in range(len(labels))]
-            legend = fig_schdule.legend(handles, labels, loc='upper left', framealpha=1)
+            legend = fig_schdule.legend(handles, labels, bbox_to_anchor=(1, 1), loc='upper left', framealpha=1)
 
         plt.show(block=False)
 
@@ -864,7 +879,7 @@ class CBBA(object):
         labels = ["Agent type 1", "Agent type 2", "Task type 1", "Task type 2"]
         f = lambda m,c: plt.plot([],[],marker=m, color=c, ls="none")[0]
         handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
-        legend = plt.legend(handles, labels, loc='upper left', framealpha=1)
+        legend = plt.legend(handles, labels, bbox_to_anchor=(1, 1), loc='upper left', framealpha=1)
 
         self.set_axes_equal_xy(ax, flag_3d=False)
         plt.show(block=False)

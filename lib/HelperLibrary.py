@@ -178,11 +178,9 @@ def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldIn
         TaskList[idx_task].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
         TaskList[idx_task].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
         TaskList[idx_task].z = 0
-        # TaskList[idx_task].start_time = 0.5 * float(config_data["TRACK_DEFAULT"]["END_TIME"])
-        TaskList[idx_task].start_time = random.uniform( 0,
-            max(float(config_data["TRACK_DEFAULT"]["END_TIME"]), float(config_data["RESCUE_DEFAULT"]["END_TIME"])) - \
-            max(float(config_data["TRACK_DEFAULT"]["DURATION"]), float(config_data["RESCUE_DEFAULT"]["DURATION"])) )
-        TaskList[idx_task].end_time = TaskList[idx_task].start_time + TaskList[idx_task].duration
+        TaskList[idx_task].start_time = 0.0
+        TaskList[idx_task].duration = 0.0
+        TaskList[idx_task].end_time = 0.0
 
     for n in range(0,num_tasks):
         print("Task " + str(n))

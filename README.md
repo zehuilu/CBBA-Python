@@ -1,5 +1,5 @@
 # CBBA-Python
-This is a Python implementation of CBBA (Consensus-Based Bundle Algorithm).
+This is a Python implementation of Consensus-Based Bundle Algorithm (CBBA).
 
 You can see more details about CBBA from these papers.
 
@@ -71,7 +71,7 @@ An example `config_example_01.json`:
 }
 ```
 
-The algorithm's main function is `CBBA.solve()`. An example is shown below.
+The algorithm's main function is `CBBA.solve()`. An example with task time window is shown below.
 ```python
 #!/usr/bin/env python3
 import os
@@ -107,12 +107,15 @@ if __name__ == "__main__":
     # create a CBBA solver with configuration data
     CBBA_solver = CBBA(config_data)
 
-    # solve, time_window_flag has no effect yet, you can ignore it for now.
+    # solve
 
     # path_list is a 2D list, i-th sub-list is the task exploration order of Agent-i.
     # e.g. path_list = [[0,4,3,1], [2,5]] means Agent-0 visits Task 0,4,3,1, and Agent-1 visits Task 2,5
 
-    # times_list is a 2D list, i-th sub-list is the task beginning time of Agent-i's tasks.
+    # times_list is a 2D list, i-th sub-list is the task beginning timestamp of Agent-i's tasks.
+    # e.g. times_list = [[10.5,20.3,30.0,48.0], [20.4,59.5]] means Agent-0 arrives at Task-0 before time=10.5 second, and then conduct Task-0;
+    # Agent-0 arrives at Task-4 before time=20.3 second, and then conduct Task-4, etc.
+
     path_list, times_list = CBBA_solver.solve(AgentList, TaskList, WorldInfoInput, max_depth, time_window_flag=True)
 
     # plot results
@@ -120,6 +123,23 @@ if __name__ == "__main__":
     # you have to add this line in your script because plt.show() incide CBBA.plot_assignment() is in unblock mode
     plt.show()
 ```
+
+An example without task time window is shown below.
+```python
+
+    # create a list of Agent(s) and Task(s)
+    # create_agents_and_tasks_homogeneous() set Task.start_time, Task.duration, and Task.end_time as zero
+    # when time_window_flag=False, CBBA doesn't consider Task.start_time, Task.duration, and Task.end_time
+    AgentList, TaskList = hp.create_agents_and_tasks_homogeneous(num_agents, num_tasks, WorldInfoTest, config_data)
+
+    # create a CBBA solver
+    CBBA_solver = CBBA(config_data)
+
+    # solve, no time window
+    path_list, _ = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth, time_window_flag=False)
+
+```
+
 
 Example
 =======
@@ -143,10 +163,10 @@ The task assignment for each agent is stored as a 2D list `path_list` (the retur
 ![A simple example with task time window 2](/doc/2.png)
 
 
-<!-- An example without task time window is `test/test_cbba_example_03.py`.
+An example where tasks don't have time window is `test/test_cbba_example_03.py`.
 ```
 $ cd <MAIN_DIRECTORY>
 $ python3 test/test_cbba_example_03.py
 ```
 The result visualization is shown below.
-![A simple example without task time window](/doc/3.png) -->
+![A simple example without task time window](/doc/3.png)
