@@ -5,3 +5,4 @@
 /.idea/**
 /.vscode/**
 /lib/__pycache__/**
+/test/__pycache__/**

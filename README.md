@@ -74,12 +74,13 @@ An example `config_example_01.json`:
 The algorithm's main function is `CBBA.solve()`. An example with task time window is shown below.
 ```python
 #!/usr/bin/env python3
-import time
 import json
 import matplotlib.pyplot as plt
-from lib.CBBA import CBBA
-from lib.WorldInfo import WorldInfo
-from lib import HelperLibrary
+import pathmagic
+with pathmagic.context():
+    from lib.CBBA import CBBA
+    from lib.WorldInfo import WorldInfo
+    import lib.HelperLibrary as HelperLibrary
 
 
 if __name__ == "__main__":
@@ -136,7 +137,7 @@ An example without task time window is shown below.
 Example
 =======
 
-A simple example with task time window is [`run_cbba_example_01.py`](/run_cbba_example_01.py).
+A simple example with a task time window is [`run_cbba_example_01.py`](/test/run_cbba_example_01.py).
 ```
 $ cd <MAIN_DIRECTORY>
 $ python3 run_cbba_example_01.py
@@ -146,7 +147,7 @@ The task assignment for each agent is stored as a 2D list `path_list` (the retur
 ![A simple example with task time window b](/doc/1_b.png)
 
 
-Another example with task time window (but the task duration is zero) is [`run_cbba_example_02.py`](/run_cbba_example_02.py).
+Another example with task time window (but the task duration is zero) is [`run_cbba_example_02.py`](/test/run_cbba_example_02.py).
 ```
 $ cd <MAIN_DIRECTORY>
 $ python3 run_cbba_example_02.py
@@ -155,7 +156,7 @@ The task assignment for each agent is stored as a 2D list `path_list` (the retur
 ![A simple example with task time window 2](/doc/2.png)
 
 
-An example where tasks don't have time window is [`run_cbba_example_03.py`](/run_cbba_example_03.py).
+An example where tasks don't have time window is [`run_cbba_example_03.py`](/test/run_cbba_example_03.py).
 ```
 $ cd <MAIN_DIRECTORY>
 $ python3 run_cbba_example_03.py
