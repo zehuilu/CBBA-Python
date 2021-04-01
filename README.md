@@ -37,7 +37,7 @@ The parameters for Tasks and Agents are written in a configuration json file.
 * `TASK_VALUE`: the value/reward of task. With larger value, the task is more important than others.
 * `START_TIME`: the starting timestamp of task [sec].
 * `END_TIME`: the enging timestamp of task [sec].
-* `DURATION`: the duration/time window of task [sec]. An agent needs to arrives at a task before the starting time and stays there until the ending time to be counted as complete a task.
+* `DURATION`: the duration/time window of task [sec]. An agent needs to arrive at a task before the starting time and stays there until the ending time to be counted as complete a task.
 
 An example `config_example_01.json`:
 ```json
@@ -74,17 +74,12 @@ An example `config_example_01.json`:
 The algorithm's main function is `CBBA.solve()`. An example with task time window is shown below.
 ```python
 #!/usr/bin/env python3
-import os
-import sys
-sys.path.append(os.getcwd()+'/lib')
+import time
 import json
 import matplotlib.pyplot as plt
-from dataclasses import dataclass, field
-from CBBA import CBBA
-from Agent import Agent
-from Task import Task
-from WorldInfo import WorldInfo
-import HelperLibrary as hp
+from lib.CBBA import CBBA
+from lib.WorldInfo import WorldInfo
+from lib import HelperLibrary
 
 
 if __name__ == "__main__":
@@ -94,44 +89,41 @@ if __name__ == "__main__":
     json_file = open(config_file_name)
     config_data = json.load(json_file)
 
-    # create a dataclass WorldInfo, each list is [min, max] coordinates for x,y,z axis
-    WorldInfoInput = WorldInfo([-2.0,2.5], [-1.5,5.5], [0.0,0.0])
+    # create a world, each list is [min, max] coordinates for x,y,z axis
+    WorldInfoTest = WorldInfo([-2.0, 2.5], [-1.5, 5.5], [0.0, 20.0])
 
-    num_agents = 5 # number of agents
-    num_tasks = 10 # number of tasks
-    max_depth = num_tasks # the maximum iteration number
-    # randomly generate a list of dataclass Agent and Task
-    # details in lib/HelperLibrary.py
-    AgentList, TaskList = hp.create_agents_and_tasks(num_agents, num_tasks, WorldInfoInput, config_data)
+    # create a list of Agent(s) and Task(s)
+    num_agents = 5
+    num_tasks = 10
+    max_depth = num_tasks
+    AgentList, TaskList = HelperLibrary.create_agents_and_tasks(num_agents, num_tasks, WorldInfoTest, config_data)
 
-    # create a CBBA solver with configuration data
+    # create a CBBA solver
     CBBA_solver = CBBA(config_data)
 
     # solve
+    path_list, times_list = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth, time_window_flag=True)
 
     # path_list is a 2D list, i-th sub-list is the task exploration order of Agent-i.
-    # e.g. path_list = [[0,4,3,1], [2,5]] means Agent-0 visits Task 0,4,3,1, and Agent-1 visits Task 2,5
+    # e.g. path_list = [[0, 4, 3, 1], [2, 5]] means Agent-0 visits Task 0 -> 4 -> 3 -> 1, and Agent-1 visits Task 2 -> 5
 
     # times_list is a 2D list, i-th sub-list is the task beginning timestamp of Agent-i's tasks.
-    # e.g. times_list = [[10.5,20.3,30.0,48.0], [20.4,59.5]] means Agent-0 arrives at Task-0 before time=10.5 second, and then conduct Task-0;
+    # e.g. times_list = [[10.5, 20.3, 30.0, 48.0], [20.4, 59.5]] means Agent-0 arrives at Task-0 before time=10.5 second, and then conduct Task-0;
     # Agent-0 arrives at Task-4 before time=20.3 second, and then conduct Task-4, etc.
 
-    path_list, times_list = CBBA_solver.solve(AgentList, TaskList, WorldInfoInput, max_depth, time_window_flag=True)
-
-    # plot results
+    # plot
     CBBA_solver.plot_assignment()
-    # you have to add this line in your script because plt.show() incide CBBA.plot_assignment() is in unblock mode
     plt.show()
+
+
 ```
 
 An example without task time window is shown below.
 ```python
-
     # create a list of Agent(s) and Task(s)
     # create_agents_and_tasks_homogeneous() set Task.start_time, Task.duration, and Task.end_time as zero
     # when time_window_flag=False, CBBA doesn't consider Task.start_time, Task.duration, and Task.end_time
-    AgentList, TaskList = hp.create_agents_and_tasks_homogeneous(num_agents, num_tasks, WorldInfoTest, config_data)
-
+    AgentList, TaskList = HelperLibrary.create_agents_and_tasks_homogeneous(num_agents, num_tasks, WorldInfoTest, config_data)
     # create a CBBA solver
     CBBA_solver = CBBA(config_data)
 
@@ -144,29 +136,29 @@ An example without task time window is shown below.
 Example
 =======
 
-A simple example with task time window is `test/test_cbba_example_01.py`.
+A simple example with task time window is [`run_cbba_example_01.py`](/run_cbba_example_01.py).
 ```
 $ cd <MAIN_DIRECTORY>
-$ python3 test/test_cbba_example_01.py
+$ python3 run_cbba_example_01.py
 ```
 The task assignment for each agent is stored as a 2D list `path_list` (the return variable of `CBBA.solve()`). The result visualization is shown below.
 ![A simple example with task time window a](/doc/1_a.png)
 ![A simple example with task time window b](/doc/1_b.png)
 
 
-Another example with task time window (but the task duration is zero) is `test/test_cbba_example_02.py`.
+Another example with task time window (but the task duration is zero) is [`run_cbba_example_02.py`](/run_cbba_example_02.py).
 ```
 $ cd <MAIN_DIRECTORY>
-$ python3 test/test_cbba_example_02.py
+$ python3 run_cbba_example_02.py
 ```
 The task assignment for each agent is stored as a 2D list `path_list` (the return variable of `CBBA.solve()`). The result visualization is shown below.
 ![A simple example with task time window 2](/doc/2.png)
 
 
-An example where tasks don't have time window is `test/test_cbba_example_03.py`.
+An example where tasks don't have time window is [`run_cbba_example_03.py`](/run_cbba_example_03.py).
 ```
 $ cd <MAIN_DIRECTORY>
-$ python3 test/test_cbba_example_03.py
+$ python3 run_cbba_example_03.py
 ```
 The result visualization is shown below.
 ![A simple example without task time window](/doc/3.png)

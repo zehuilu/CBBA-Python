@@ -1,19 +1,10 @@
 #!/usr/bin/env python3
-import os
-import sys
-sys.path.append(os.getcwd()+'/lib')
 import time
 import json
-import random
-import math
-import numpy as np
 import matplotlib.pyplot as plt
-from dataclasses import dataclass, field
-from CBBA import CBBA
-from Agent import Agent
-from Task import Task
-from WorldInfo import WorldInfo
-import HelperLibrary as hp
+from lib.CBBA import CBBA
+from lib.WorldInfo import WorldInfo
+from lib import HelperLibrary
 
 
 if __name__ == "__main__":
@@ -24,13 +15,14 @@ if __name__ == "__main__":
     config_data = json.load(json_file)
 
     # create a world, each list is [min, max] coordinates for x,y,z axis
-    WorldInfoTest = WorldInfo([-2.0,2.5], [-1.5,5.5], [0.0,20.0])
+    WorldInfoTest = WorldInfo([-2.0, 2.5], [-1.5, 5.5], [0.0, 20.0])
 
     # create a list of Agent(s) and Task(s)
     num_agents = 5
     num_tasks = 20
     max_depth = num_tasks
-    AgentList, TaskList = hp.create_agents_and_tasks_homogeneous(num_agents, num_tasks, WorldInfoTest, config_data)
+    AgentList, TaskList = HelperLibrary.create_agents_and_tasks_homogeneous(
+        num_agents, num_tasks, WorldInfoTest, config_data)
 
     # create a CBBA solver
     CBBA_solver = CBBA(config_data)
@@ -53,4 +45,3 @@ if __name__ == "__main__":
     # plot without time window
     CBBA_solver.plot_assignment_without_timewindow()
     plt.show()
-    

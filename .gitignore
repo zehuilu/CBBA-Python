@@ -2,5 +2,6 @@
 *.asv
 *.DS_Store
 *.pyc
-/.vscode/*
-/lib/__pycache__/*
+/.idea/**
+/.vscode/**
+/lib/__pycache__/**
