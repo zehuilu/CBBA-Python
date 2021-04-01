@@ -4,9 +4,9 @@ import json
 import matplotlib.pyplot as plt
 import pathmagic
 with pathmagic.context():
-    from lib.CBBA import CBBA
-    from lib.WorldInfo import WorldInfo
-    import lib.HelperLibrary as HelperLibrary
+    from CBBA import CBBA
+    from WorldInfo import WorldInfo
+    import HelperLibrary as HelperLibrary
 
 
 if __name__ == "__main__":

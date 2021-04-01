@@ -4,8 +4,8 @@ import math
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
-from lib.Task import Task
-from lib.WorldInfo import WorldInfo
+from Task import Task
+from WorldInfo import WorldInfo
 
 
 class CBBA(object):

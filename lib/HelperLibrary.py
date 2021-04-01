@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import random
 import numpy as np
-from lib.Agent import Agent
-from lib.Task import Task
-from lib.WorldInfo import WorldInfo
+from Agent import Agent
+from Task import Task
+from WorldInfo import WorldInfo
 
 
 def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: WorldInfo, config_data):
