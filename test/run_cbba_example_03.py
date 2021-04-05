@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     # solve, no time window
     path_list, _ = CBBA_solver.solve(AgentList, TaskList, WorldInfoTest, max_depth, time_window_flag=False)
-    
+
     t_end = time.time()
     t_used = t_end - t_start
     print("Time used [sec]: ", t_used)

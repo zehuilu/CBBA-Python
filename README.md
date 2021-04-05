@@ -78,9 +78,9 @@ import json
 import matplotlib.pyplot as plt
 import pathmagic
 with pathmagic.context():
-    from lib.CBBA import CBBA
-    from lib.WorldInfo import WorldInfo
-    import lib.HelperLibrary as HelperLibrary
+    from CBBA import CBBA
+    from WorldInfo import WorldInfo
+    import HelperLibrary as HelperLibrary
 
 
 if __name__ == "__main__":
@@ -163,3 +163,24 @@ $ python3 run_cbba_example_03.py
 ```
 The result visualization is shown below.
 ![A simple example without task time window](/doc/3.png)
+
+
+Not every task is assigned. What happened?
+======================================================
+
+There are some configuration settings in json files that can cause this problem.
+
+If your tasks have time windows, i.e. `time_window_flag=True`, it is possible that no agent can execute a task due to its small `END_TIME` or `DURATION`.
+It can take long time for every agent traveling to this task. Before the agent arrives, this task has been expired. So this task cannot be assigned to any agents.
+A quick fix is to set a relatively large `END_TIME` or small `DURATION` if your world , i.e., `WorldInfo` is large.
+
+Another general setting, no matter your tasks have time windows or not, is `NOM_VELOCITY` and `FUEL`.
+When CBBA is finding the best bid for each agent, it skips the negative scores because the initial value of bid score is -1.
+The score for each bid is `score = reward - penalty`, it is possible that this score is negative because the penalty is too large.
+Note that the penalty is the distance to next task multiplied by `FUEL`, and the reward is `TASK_VALUE * exp((-Task.discount) * dt_current)`,
+where dt_current is the distance to next task divided by `NOM_VELOCITY`.
+A quick fix is to set `FUEL` as 0, and see if CBBA can assign all the tasks. If yes, then set a relatively small `FUEL` for a large world.
+If no, then set a relatively large `NOM_VELOCITY` for a large world, and set a proper `FUEL` later.
+This is defined in CBBA's paper, I implemented it as it is.
+
+More details in compute_bid() and scoring_compute_score() of [`CBBA.py`](/lib/CBBA.py)
