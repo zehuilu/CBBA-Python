@@ -680,14 +680,16 @@ class CBBA(object):
 
                 reward = task_current.task_value * math.exp((-task_current.discount) * dt_current)
 
-            # Subtract fuel cost. Implement constant fuel to ensure DMG (diminishing marginal gain).
-            # This is a fake score since it double-counts fuel. Should not be used when comparing to optimal score.
-            # Need to compute real score of CBBA paths once CBBA algorithm has finished running.
-            penalty = self.AgentList[idx_agent].fuel * math.sqrt(
-                (self.AgentList[idx_agent].x-task_current.x)**2 + (self.AgentList[idx_agent].y-task_current.y)**2 +
-                (self.AgentList[idx_agent].z-task_current.z)**2)
+            # # Subtract fuel cost. Implement constant fuel to ensure DMG (diminishing marginal gain).
+            # # This is a fake score since it double-counts fuel. Should not be used when comparing to optimal score.
+            # # Need to compute real score of CBBA paths once CBBA algorithm has finished running.
+            # penalty = self.AgentList[idx_agent].fuel * math.sqrt(
+            #     (self.AgentList[idx_agent].x-task_current.x)**2 + (self.AgentList[idx_agent].y-task_current.y)**2 +
+            #     (self.AgentList[idx_agent].z-task_current.z)**2)
+            #
+            # score = reward - penalty
 
-            score = reward - penalty
+            score = reward
         else:
             # FOR USER TO DO:  Define score function for specialized agents, for example:
             # elseif(agent.type == CBBA_Params.AGENT_TYPES.NEW_AGENT), ...  

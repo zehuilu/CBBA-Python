@@ -25,8 +25,8 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     agent_quad_default.agent_type = config_data["AGENT_TYPES"].index("quad")
     # agent cruise velocity (m/s)
     agent_quad_default.nom_velocity = float(config_data["QUAD_DEFAULT"]["NOM_VELOCITY"])
-    # agent fuel penalty (per meter)
-    agent_quad_default.fuel = float(config_data["QUAD_DEFAULT"]["FUEL"])
+    # # agent fuel penalty (per meter)
+    # agent_quad_default.fuel = float(config_data["QUAD_DEFAULT"]["FUEL"])
 
     # car
     agent_car_default = Agent()
@@ -34,8 +34,8 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     agent_car_default.agent_type = config_data["AGENT_TYPES"].index("car")
     # agent cruise velocity (m/s)
     agent_car_default.nom_velocity = float(config_data["CAR_DEFAULT"]["NOM_VELOCITY"])
-    # agent fuel penalty (per meter)
-    agent_car_default.fuel = float(config_data["CAR_DEFAULT"]["FUEL"])
+    # # agent fuel penalty (per meter)
+    # agent_car_default.fuel = float(config_data["CAR_DEFAULT"]["FUEL"])
 
     # Create some default tasks
     # Track
@@ -129,8 +129,8 @@ def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldIn
     agent_quad_default.agent_type = config_data["AGENT_TYPES"].index("quad")
     # agent cruise velocity (m/s)
     agent_quad_default.nom_velocity = float(config_data["QUAD_DEFAULT"]["NOM_VELOCITY"])
-    # agent fuel penalty (per meter)
-    agent_quad_default.fuel = float(config_data["QUAD_DEFAULT"]["FUEL"])
+    # # agent fuel penalty (per meter)
+    # agent_quad_default.fuel = float(config_data["QUAD_DEFAULT"]["FUEL"])
 
     # Create some default tasks
     # Track

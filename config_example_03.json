@@ -3,13 +3,11 @@
     "TASK_TYPES": ["track", "rescue"],
 
     "QUAD_DEFAULT": {
-        "NOM_VELOCITY": 1,
-        "FUEL": 3
+        "NOM_VELOCITY": 1
     },
 
     "CAR_DEFAULT": {
-        "NOM_VELOCITY": 1,
-        "FUEL": 3
+        "NOM_VELOCITY": 1
     },
     
     "TRACK_DEFAULT": {
